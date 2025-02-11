@@ -1,0 +1,268 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /***** Custom Colors *****/
+  /* Crimson */
+  --color-crimson: hsl(348, 83%, 47%);
+  --color-crimson-light: hsl(348, 100%, 65%);
+  --color-crimson-dark: hsl(348, 83%, 38%);
+  /* Matte Black */
+  --color-matte-black: hsl(0, 0%, 10%);
+  --color-matte-black-light: hsl(0, 0%, 17%);
+  --color-matte-black-dark: hsl(0, 0%, 5%);
+  /* Off White */
+  --color-off-white: hsl(0, 0%, 97%);
+  --color-off-white-light: hsl(0, 0%, 98%);
+  --color-off-white-dark: hsl(0, 0%, 94%);
+  /* Grey */
+  --color-grey: hsl(220, 9%, 65%);
+  --color-grey-light: hsl(220, 13%, 91%);
+  --color-grey-dark: hsl(220, 9%, 35%);
+  /* Cream */
+  --color-cream: hsl(30, 50%, 89%);
+  --color-cream-light: hsl(40, 100%, 95%);
+  --color-cream-dark: hsl(30, 40%, 81%);
+  /* Gold */
+  --color-gold: hsl(51, 100%, 50%);
+  --color-gold-light: hsl(50, 100%, 70%);
+  --color-gold-dark: hsl(51, 100%, 40%);
+  /* Silver */
+  --color-silver: hsl(0, 0%, 75%);
+  --color-silver-light: hsl(0, 0%, 88%);
+  --color-silver-dark: hsl(0, 0%, 63%);
+  /* Orange */
+  --color-orange: hsl(16, 100%, 66%);
+  --color-orange-light: hsl(17, 100%, 74%);
+  --color-orange-dark: hsl(9, 100%, 64%);
+  /* Blue */
+  --color-blue: hsl(225, 73%, 57%);
+  --color-blue-light: hsl(228, 100%, 71%);
+  --color-blue-dark: hsl(225, 57%, 45%);
+  /* Pink */
+  --color-pink: hsl(330, 100%, 71%);
+  --color-pink-light: hsl(335, 100%, 86%);
+  --color-pink-dark: hsl(328, 100%, 54%);
+  /* Purple */
+  --color-purple: hsl(277, 76%, 53%);
+  --color-purple-light: hsl(270, 91%, 65%);
+  --color-purple-dark: hsl(273, 67%, 39%);
+  /* Green */
+  --color-green: hsl(120, 61%, 50%);
+  --color-green-light: hsl(90, 100%, 49%);
+  --color-green-dark: hsl(120, 61%, 34%);
+  /* Yellow */
+  --color-yellow: hsl(51, 100%, 50%);
+  --color-yellow-light: hsl(60, 100%, 50%);
+  --color-yellow-dark: hsl(39, 100%, 50%);
+}
+
+/***** Custom Transitions *****/
+.transition-quicker {
+  transition: left 0.2s ease-in-out, right 0.2s ease-in-out,
+    width 0.2s ease-in-out, transform 0.2s ease-in-out, color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
+}
+
+.transition-quick {
+  transition: left 0.3s ease-in-out, right 0.3s ease-in-out,
+    width 0.3s ease-in-out, transform 0.3s ease-in-out, color 0.3s ease-in-out,
+    background-color 0.3s ease-in-out;
+}
+
+.transition-mid {
+  transition: left 0.5s ease-in-out, right 0.5s ease-in-out,
+    width 0.5s ease-in-out, transform 0.5s ease-in-out, color 0.5s ease-in-out,
+    background-color 0.5s ease-in-out;
+}
+
+.transition-slow {
+  transition: left 1s ease-in-out, right 1s ease-in-out, width 1s ease-in-out,
+    transform 1s ease-in-out, color 1s ease-in-out,
+    background-color 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    display: none;
+  }
+  to {
+    opacity: 1;
+    display: block;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 1s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    display: block;
+  }
+  to {
+    opacity: 0;
+    display: none;
+  }
+}
+
+.fade-out {
+  animation: fadeOut 0.2s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes spinning {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: 360deg;
+  }
+}
+
+.spinning {
+  animation: spinning 1.25s ease-in-out infinite;
+}
+
+/***** Custom Fonts *****/
+.hand-written {
+  font-family: "Cormorant Garamond";
+}
+
+.medieval::first-letter {
+  color: var(--color-crimson);
+  font-weight: bold;
+  font-size: 1.75em;
+}
+
+/***** Custom Webkit *****/
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 1rem;
+  height: 0.5rem;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-silver);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-silver-dark);
+}
+
+/***** General *****/
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  color: var(--color-matte-black);
+  font-family: "Proza Libre";
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeSpeed;
+  line-height: 1.5;
+}
+
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+}
+
+img,
+picture {
+  max-width: 100%;
+  display: block;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold;
+  font-family: "Lato";
+}
+
+h1 {
+  font-size: 1.75rem;
+  @media (min-width: 640px) {
+    font-size: 2rem;
+  }
+}
+
+h2 {
+  font-size: 1.5rem;
+  @media (min-width: 640px) {
+    font-size: 1.75rem;
+  }
+}
+
+h3 {
+  font-size: 1.25rem;
+  @media (min-width: 640px) {
+    font-size: 1.5rem;
+  }
+}
+
+h4 {
+  font-size: 1rem;
+  @media (min-width: 640px) {
+    font-size: 1.25rem;
+  }
+}
+
+h5,
+h6 {
+  font-size: 1rem;
+}
+
+/***** Edge-cases *****/
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--color-gold-light) inset !important;
+  -webkit-text-fill-color: initial !important;
+}
