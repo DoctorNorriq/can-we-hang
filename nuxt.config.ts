@@ -32,6 +32,17 @@ export default defineNuxtConfig({
     },
   },
   css: ["~/assets/css/main.css"],
+  tailwindcss: {
+    config: {
+      content: [
+        "./components/**/*.{js,vue,ts}",
+        "./layouts/**/*.vue",
+        "./pages/**/*.vue",
+        "./plugins/**/*.{js,ts}",
+        "./nuxt.config.{js,ts}",
+      ],
+    },
+  },
   compatibilityDate: "2025-02-11",
   build: {
     transpile: ["v-calendar"],

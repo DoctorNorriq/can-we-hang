@@ -19,6 +19,7 @@ const allSelectedDates = ref<{ user_name: string; available_days: string[] }[]>(
 );
 const showCalendar = ref(false);
 const commonDates = ref<string[]>([]);
+let subscription: any = null;
 
 const isRoomLoaded = computed(
   () => props.room && props.room.id && props.room.name && props.room.code
@@ -47,15 +48,20 @@ async function fetchAllSelectedDates() {
 
     if (error) throw error;
 
-    allSelectedDates.value = data || [];
+    // Filter out any entries with empty available_days arrays
+    allSelectedDates.value = (data || []).filter(
+      (entry) => entry.available_days.length > 0
+    );
     calculateCommonDates();
 
-    // Load user's previously selected dates
+    // Update the current user's selected dates if they exist
     const userDates = allSelectedDates.value.find(
       (user) => user.user_name === userStore.name
     );
     if (userDates) {
       selectedDates.value = userDates.available_days;
+    } else {
+      selectedDates.value = []; // Clear selected dates if user has no entry
     }
   } catch (error) {
     console.error("Error fetching dates:", error);
@@ -84,22 +90,32 @@ async function saveDates() {
   }
 
   try {
-    const { error } = await supabase.from("availability").upsert(
-      {
-        date_id: props.room!.id,
-        user_name: userStore.name,
-        available_days: selectedDates.value,
-      },
-      {
-        onConflict: "date_id,user_name",
-        returning: "minimal",
-      }
-    );
+    if (selectedDates.value.length > 0) {
+      // If dates are selected, upsert them
+      const { error } = await supabase.from("availability").upsert(
+        {
+          date_id: props.room!.id,
+          user_name: userStore.name,
+          available_days: selectedDates.value,
+        },
+        {
+          onConflict: "date_id,user_name",
+          returning: "minimal",
+        }
+      );
 
-    if (error) throw error;
+      if (error) throw error;
+    } else {
+      // If no dates are selected, delete the user's entry
+      const { error } = await supabase
+        .from("availability")
+        .delete()
+        .match({ date_id: props.room!.id, user_name: userStore.name });
+
+      if (error) throw error;
+    }
 
     alert("Dates saved successfully!");
-    await fetchAllSelectedDates();
   } catch (error) {
     console.error("Error saving dates:", error);
     alert(`Error saving dates: ${(error as Error).message}. Please try again.`);
@@ -114,9 +130,33 @@ function toggleCalendar() {
   showCalendar.value = !showCalendar.value;
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (isRoomLoaded.value) {
-    fetchAllSelectedDates();
+    await fetchAllSelectedDates();
+
+    // Set up real-time subscription
+    subscription = supabase
+      .channel("availability_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "availability",
+          filter: `date_id=eq.${props.room!.id}`,
+        },
+        (payload) => {
+          console.log("Change received!", payload);
+          fetchAllSelectedDates();
+        }
+      )
+      .subscribe();
+  }
+});
+
+onUnmounted(() => {
+  if (subscription) {
+    supabase.removeChannel(subscription);
   }
 });
 
@@ -131,27 +171,26 @@ watch(isRoomLoaded, (newValue) => {
   <div v-if="isRoomLoaded" class="flex flex-col gap-4 max-w-md mx-auto">
     <h1 class="text-3xl font-bold text-blue-800">{{ room!.name }}</h1>
     <p class="text-green-700">Room Code: {{ room!.code }}</p>
-    <p class="text-blue-600">Welcome, {{ userStore.name }}</p>
+    <p class="text-blue-600">Welcome, {{ userStore.name }}!</p>
 
-    <div class="bg-orange-400 p-6 rounded shadow-md">
+    <div class="bg-orange-400 p-6 rounded-lg shadow-md">
       <h2 class="text-2xl font-bold text-white mb-4">Select Available Dates</h2>
       <button
         @click="toggleCalendar"
-        class="bg-blue-600 py-2 px-4 text-white font-bold rounded transition-colors hover:bg-blue-700 w-full mb-4"
+        class="bg-blue-600 py-2 px-4 text-white font-bold rounded-full transition-colors hover:bg-blue-700 w-full mb-4"
       >
         {{ showCalendar ? "Hide Calendar" : "Show Calendar" }}
       </button>
       <Calendar v-if="showCalendar" v-model="selectedDates" />
       <button
-        v-if="showCalendar"
         @click="saveDates"
-        class="bg-blue-600 py-2 px-4 text-white font-bold rounded transition-colors hover:bg-blue-700 w-full mt-4"
+        class="bg-blue-600 py-2 px-4 text-white font-bold rounded-full transition-colors hover:bg-blue-700 w-full mt-4"
       >
         Save Dates
       </button>
     </div>
 
-    <div class="bg-green-400 p-6 rounded shadow-md">
+    <div class="bg-green-400 p-6 rounded-lg shadow-md">
       <h2 class="text-2xl font-bold text-white mb-4">
         {{ userCount > 1 ? "Common Available Dates" : "Available Dates" }}
       </h2>
@@ -176,7 +215,7 @@ watch(isRoomLoaded, (newValue) => {
 
     <button
       @click="leaveRoom"
-      class="bg-red-500 py-2 px-4 text-white font-bold rounded transition-colors hover:bg-red-600"
+      class="bg-red-500 py-2 px-4 text-white font-bold rounded-full transition-colors hover:bg-red-600"
     >
       Leave Room
     </button>
