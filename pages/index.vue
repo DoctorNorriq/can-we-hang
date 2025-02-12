@@ -140,7 +140,7 @@ function updateUserData(data) {
 </script>
 
 <template>
-  <div class="grid sm:grid-cols-2 bg-coffee-foam h-auto sm:h-[100dvh]">
+  <div class="grid sm:grid-cols-2 bg-coffee-foam min-h-[100dvh] sm:h-[100dvh]">
     <div
       class="relative flex flex-col items-center justify-center bg-coffee-mocha"
     >
@@ -287,7 +287,7 @@ function updateUserData(data) {
           </button>
         </form>
       </div>
-      <p class="text-coffee-mocha text-[1.5rem]" v-else>
+      <p class="text-coffee-mocha text-[1.25rem]" v-else>
         Enter and save your name to create or join a date room.
       </p>
     </div>
