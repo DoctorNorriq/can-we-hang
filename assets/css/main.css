@@ -144,24 +144,11 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #d7ccc8;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #6d4c41;
-}
-
-.custom-scrollbar-alt::-webkit-scrollbar {
-  width: 1rem;
-  height: 0.5rem;
-}
-
-.custom-scrollbar-alt::-webkit-scrollbar-track {
   background: #4e342e;
 }
 
-.custom-scrollbar-alt::-webkit-scrollbar-thumb {
-  background: #6d4c41;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d7ccc8;
 }
 
 /***** General *****/

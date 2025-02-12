@@ -142,11 +142,11 @@ function updateUserData(data) {
 <template>
   <div class="grid sm:grid-cols-2 bg-coffee-foam min-h-[100dvh] sm:h-[100dvh]">
     <div
-      class="relative flex flex-col items-center justify-center bg-coffee-mocha"
+      class="relative flex flex-col items-center justify-center bg-coffee-mocha p-4"
     >
       <div class="text-center">
         <h1
-          class="text-coffee-foam font-bold text-coffee-border-coffee-foam text-[3rem]"
+          class="text-coffee-foam font-bold text-coffee-border-coffee-foam text-[clamp(2rem,5vw,4rem)]"
         >
           Is it a date?
         </h1>
@@ -183,7 +183,7 @@ function updateUserData(data) {
 
       <div
         v-if="currentDate"
-        class="flex flex-col gap-4 w-full max-w-[450px] p-4 pb-8"
+        class="flex flex-col gap-4 w-full max-w-[450px] p-4"
       >
         <div class="w-full">
           <h3 class="text-coffee-foam mb-2">

@@ -258,6 +258,18 @@ function formatDate(dateString: string) {
   return `${day}-${month}-${year} (${dayOfWeek})`;
 }
 
+const buttonClasses = computed(() => {
+  if (userHasSelectedDates.value) {
+    return showCalendar.value
+      ? "bg-coffee-foam text-coffee-mocha"
+      : "bg-coffee-mocha text-coffee-foam";
+  } else {
+    return showCalendar.value
+      ? "bg-coffee-cappuccino text-white" // Red background when calendar is shown but no dates selected
+      : "bg-coffee-foam text-coffee-mocha"; // Blue background when calendar is hidden and no dates selected
+  }
+});
+
 onMounted(async () => {
   document.addEventListener("click", handleClickOutside);
   if (isDateLoaded.value) {
@@ -304,18 +316,18 @@ watch(isDateLoaded, (newValue) => {
 </script>
 
 <template>
-  <div class="h-full sm:overflow-y-auto custom-scrollbar-alt">
+  <div class="h-full sm:overflow-y-auto custom-scrollbar">
     <div
       v-if="isDateLoaded"
-      class="flex flex-col bg-coffee-foam items-center justify-center gap-4 p-4 w-full min-h-full"
+      class="flex flex-col bg-coffee-foam items-center justify-center gap-8 sm:gap-4 p-4 w-full min-h-full"
     >
       <div class="flex flex-col items-center w-full max-w-[450px]">
         <h1
-          class="text-[3rem] font-bold text-coffee-mocha text-center break-words w-full"
+          class="text-[clamp(2rem,5vw,4rem)] font-bold text-coffee-mocha text-center break-words w-full"
         >
           {{ date!.name }}?
         </h1>
-        <div class="flex items-center mt-2">
+        <div class="flex items-center">
           <Icon name="tabler:hash" class="text-blue-600 text-[1.25rem]" />
           <span
             class="text-blue-600 font-bold cursor-pointer"
@@ -328,10 +340,16 @@ watch(isDateLoaded, (newValue) => {
       </div>
 
       <div
-        class="flex flex-col gap-4 bg-coffee-latte w-full max-w-[450px] p-6 rounded shadow-md overflow-y-auto custom-scrollbar-alt max-h-[250px] sm:max-h-[350px]"
+        class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md overflow-y-auto custom-scrollbar max-h-[300px] sm:max-h-[350px]"
+        :class="userHasSelectedDates ? 'bg-coffee-mocha' : 'bg-coffee-latte'"
       >
         <div>
-          <h3 class="font-bold text-coffee-mocha">
+          <h3
+            class="font-bold"
+            :class="
+              userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+            "
+          >
             {{
               usersChosen.length > 1
                 ? "Possible dates in common"
@@ -339,23 +357,26 @@ watch(isDateLoaded, (newValue) => {
             }}
           </h3>
           <template v-if="usersChosen.length > 0">
-            <p v-if="usersChosen.length === 1" class="text-coffee-mocha mb-4">
-              These are only the dates proposed by the first user. Possible
-              dates
-              <span class="text-coffee-mocha font-bold">in common</span> will be
-              shown, when more users enter their availability.
-            </p>
             <ul v-if="availableDates.length > 0 && usersChosen.length > 1">
               <li
                 v-for="date in availableDates"
                 :key="date"
-                class="flex items-center text-coffee-mocha font-bold"
+                class="flex items-center font-bold"
+                :class="
+                  userHasSelectedDates
+                    ? 'text-coffee-foam'
+                    : 'text-coffee-mocha'
+                "
               >
                 {{ formatDate(date) }}
                 <Icon
                   v-if="selectedDates.includes(date)"
                   name="material-symbols:star-rounded"
-                  class="text-coffee-mocha"
+                  :class="
+                    userHasSelectedDates
+                      ? 'text-coffee-foam'
+                      : 'text-coffee-mocha'
+                  "
                   title="You have selected this date"
                 />
               </li>
@@ -364,41 +385,91 @@ watch(isDateLoaded, (newValue) => {
               <li
                 v-for="date in allSelectedDatesWithCount"
                 :key="date.date"
-                class="flex items-center text-coffee-mocha font-bold"
+                class="flex items-center font-bold"
+                :class="
+                  userHasSelectedDates
+                    ? 'text-coffee-foam'
+                    : 'text-coffee-mocha'
+                "
               >
                 {{ formatDate(date.date) }}
                 <Icon
                   v-if="selectedDates.includes(date.date)"
                   name="material-symbols:star-rounded"
-                  class="text-coffee-mocha"
+                  :class="
+                    userHasSelectedDates
+                      ? 'text-coffee-foam'
+                      : 'text-coffee-mocha'
+                  "
                   title="You have selected this date"
                 />
               </li>
             </ul>
             <p
+              v-if="usersChosen.length === 1"
+              class="mt-4"
+              :class="
+                userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+              "
+            >
+              These are only the dates proposed by the first user. Possible
+              dates
+              <span
+                class="font-bold"
+                :class="
+                  userHasSelectedDates
+                    ? 'text-coffee-foam'
+                    : 'text-coffee-mocha'
+                "
+                >in common</span
+              >
+              will be shown, when more users enter their availability.
+            </p>
+            <p
               v-if="availableDates.length === 0 && usersChosen.length > 1"
-              class="text-coffee-mocha"
+              :class="
+                userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+              "
             >
               No dates in common. Try harder!
             </p>
           </template>
-          <p v-else class="text-coffee-mocha">
+          <p
+            v-else
+            :class="
+              userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+            "
+          >
             No dates have been proposed yet.
           </p>
         </div>
         <div v-if="otherSelectedDates.length > 0 && usersChosen.length > 1">
-          <h3 class="font-bold text-coffee-mocha">Other proposed dates</h3>
+          <h3
+            class="font-bold"
+            :class="
+              userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+            "
+          >
+            Other proposed dates
+          </h3>
           <ul>
             <li
               v-for="date in otherSelectedDates"
               :key="date.date"
-              class="flex items-center text-coffee-mocha font-bold opacity-50"
+              class="flex items-center font-bold opacity-50"
+              :class="
+                userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+              "
             >
               {{ formatDate(date.date) }} ({{ date.count }}/{{ userCount }})
               <Icon
                 v-if="selectedDates.includes(date.date)"
                 name="material-symbols:star-rounded"
-                class="text-coffee-mocha"
+                :class="
+                  userHasSelectedDates
+                    ? 'text-coffee-foam'
+                    : 'text-coffee-mocha'
+                "
                 title="You have selected this date"
               />
             </li>
@@ -406,14 +477,32 @@ watch(isDateLoaded, (newValue) => {
         </div>
       </div>
       <div
-        class="flex flex-col gap-4 w-full max-w-[450px] bg-coffee-mocha p-6 rounded shadow-md"
+        class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md"
+        :class="userHasSelectedDates ? 'bg-coffee-latte' : 'bg-coffee-mocha'"
       >
         <div>
-          <h3 class="text-2xl font-bold text-coffee-foam">Select dates</h3>
-          <p v-if="userHasSelectedDates" class="text-coffee-foam">
+          <h3
+            class="text-2xl font-bold text-coffee-foam"
+            :class="
+              userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
+            "
+          >
+            Select dates
+          </h3>
+          <p
+            v-if="userHasSelectedDates"
+            :class="
+              userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
+            "
+          >
             You have proposed some dates - good job!
           </p>
-          <p v-else class="text-coffee-foam">
+          <p
+            v-else
+            :class="
+              userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
+            "
+          >
             You haven't yet proposed any dates. Press the calender to get
             started!
           </p>
@@ -421,19 +510,21 @@ watch(isDateLoaded, (newValue) => {
         <button
           @click="toggleCalendar"
           class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
-          :class="
-            showCalendar
-              ? 'bg-coffee-cappuccino text-coffee-foam'
-              : 'bg-coffee-foam text-coffee-mocha'
-          "
+          :class="buttonClasses"
         >
           {{ showCalendar ? "Hide Calendar" : "Show Calendar" }}
         </button>
+
         <Calendar v-if="showCalendar" v-model="localSelectedDates" />
         <button
           v-if="showCalendar"
           @click="saveDates"
-          class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
+          class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
+          :class="
+            userHasSelectedDates
+              ? 'bg-coffee-mocha text-coffee-foam'
+              : 'bg-coffee-foam text-coffee-mocha'
+          "
         >
           Save Dates
         </button>
@@ -444,8 +535,12 @@ watch(isDateLoaded, (newValue) => {
       >
         <button
           @click="leaveDate"
-          class="w-full bg-coffee-latte py-3 px-6 text-coffee-foam font-bold rounded transition-colors sm:hover:bg-coffee-mocha"
-          :class="!leaveDateConfirm ? 'bg-coffee-latte' : 'bg-coffee-mocha'"
+          class="w-full bg-coffee-latte py-3 px-6 font-bold rounded transition-colors"
+          :class="
+            !leaveDateConfirm
+              ? 'bg-coffee-latte text-coffee-mocha sm:hover:bg-coffee-mocha sm:hover:text-coffee-foam'
+              : 'bg-coffee-mocha text-coffee-latte'
+          "
         >
           {{ leaveDateConfirm ? "Confirm" : "Leave date room" }}
         </button>
