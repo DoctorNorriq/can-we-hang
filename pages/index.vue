@@ -288,10 +288,12 @@ function updateUserData(data) {
         </form>
       </div>
       <div class="flex flex-col items-center gap-2" v-else>
-        <Icon
-          name="ph:arrow-fat-up-fill"
-          class="text-coffee-mocha text-[4rem] animate-bounce"
-        />
+        <div class="sm:-rotate-90 sm:order-2">
+          <Icon
+            name="ph:arrow-fat-up-fill"
+            class="text-coffee-mocha text-[4rem] animate-bounce"
+          />
+        </div>
         <p class="text-coffee-mocha text-[1.25rem] text-center">
           Enter and save your name to create or join a date room.
         </p>
