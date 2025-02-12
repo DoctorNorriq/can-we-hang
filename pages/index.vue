@@ -140,7 +140,7 @@ function updateUserData(data) {
 </script>
 
 <template>
-  <div class="grid sm:grid-cols-2 bg-coffee-foam min-h-[100dvh]">
+  <div class="grid sm:grid-cols-2 bg-coffee-foam h-[100dvh]">
     <div
       class="relative flex flex-col items-center justify-center bg-coffee-mocha"
     >
@@ -203,7 +203,13 @@ function updateUserData(data) {
                 class="text-coffee-foam text-[1.5rem]"
                 name="mdi:check-bold"
               />
-              {{ user }}
+              {{ user }} {{ user === userName ? "(you)" : "" }}
+              <Icon
+                v-if="user === userName"
+                name="material-symbols:star-rounded"
+                class="text-coffee-foam"
+                title="You have selected this date"
+              />
             </div>
             <div
               v-if="usersChosen.length > 0 && usersNotChosen.length > 0"
@@ -217,7 +223,13 @@ function updateUserData(data) {
                 class="text-coffee-foam text-[1.5rem]"
                 name="mdi:close-thick"
               />
-              {{ user }}
+              {{ user }} {{ user === userName ? "(you)" : "" }}
+              <Icon
+                v-if="user === userName"
+                name="material-symbols:star-rounded"
+                class="text-coffee-foam"
+                title="You have selected this date"
+              />
             </div>
           </div>
         </div>

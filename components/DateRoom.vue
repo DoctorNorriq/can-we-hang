@@ -28,7 +28,7 @@ const allSelectedDatesWithCount = computed(() => {
   });
   return Array.from(dateCount.entries())
     .map(([date, count]) => ({ date, count }))
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 });
 
 const showCalendar = ref(false);
@@ -62,14 +62,12 @@ const availableDates = computed(() => {
   if (usersChosen.value.length !== userCount.value) {
     return [];
   }
-
   // If there are at least two users and all have chosen dates
   if (usersChosen.value.length >= 2) {
     return allSelectedDatesWithCount.value
       .filter((date) => date.count === userCount.value)
       .map((date) => date.date);
   }
-
   // If there's only one user who has chosen dates
   return allSelectedDatesWithCount.value.map((date) => date.date);
 });
@@ -79,12 +77,10 @@ const otherSelectedDates = computed(() => {
   if (usersChosen.value.length === 0) {
     return [];
   }
-
   // If not all users have chosen dates, show all selected dates
   if (usersChosen.value.length < userCount.value) {
     return allSelectedDatesWithCount.value;
   }
-
   // If all users have chosen dates, show dates that are not common to all
   return allSelectedDatesWithCount.value.filter(
     (date) => date.count < userCount.value && date.count > 0
@@ -283,7 +279,7 @@ watch(isDateLoaded, (newValue) => {
 </script>
 
 <template>
-  <div class="h-full sm:overflow-y-auto">
+  <div class="h-full sm:overflow-y-auto custom-scrollbar">
     <div
       v-if="isDateLoaded"
       class="flex flex-col bg-coffee-foam items-center justify-center gap-4 p-4 w-full min-h-full"
@@ -356,16 +352,40 @@ watch(isDateLoaded, (newValue) => {
               <span class="text-coffee-mocha font-bold">in common</span> will be
               shown, when more users enter their availability.
             </p>
-            <ul v-if="availableDates.length > 0">
+            <ul v-if="availableDates.length > 0 && usersChosen.length > 1">
               <li
                 v-for="date in availableDates"
                 :key="date"
-                class="text-coffee-mocha font-bold"
+                class="flex items-center text-coffee-mocha font-bold"
               >
                 {{ new Date(date).toLocaleDateString() }}
+                <Icon
+                  v-if="selectedDates.includes(date)"
+                  name="material-symbols:star-rounded"
+                  class="text-coffee-mocha"
+                  title="You have selected this date"
+                />
               </li>
             </ul>
-            <p v-else class="text-coffee-mocha">
+            <ul v-if="usersChosen.length === 1">
+              <li
+                v-for="date in allSelectedDatesWithCount"
+                :key="date.date"
+                class="flex items-center text-coffee-mocha font-bold"
+              >
+                {{ new Date(date.date).toLocaleDateString() }}
+                <Icon
+                  v-if="selectedDates.includes(date.date)"
+                  name="material-symbols:star-rounded"
+                  class="text-coffee-mocha"
+                  title="You have selected this date"
+                />
+              </li>
+            </ul>
+            <p
+              v-if="availableDates.length === 0 && usersChosen.length > 1"
+              class="text-coffee-mocha"
+            >
               No dates in common. Try harder!
             </p>
           </template>
@@ -373,17 +393,23 @@ watch(isDateLoaded, (newValue) => {
             No dates have been proposed yet.
           </p>
         </div>
-        <div v-if="otherSelectedDates.length > 0">
+        <div v-if="otherSelectedDates.length > 0 && usersChosen.length > 1">
           <h3 class="font-bold text-coffee-mocha">Other proposed dates</h3>
           <ul>
             <li
               v-for="date in otherSelectedDates"
               :key="date.date"
-              class="text-coffee-mocha font-bold opacity-50"
+              class="flex items-center text-coffee-mocha font-bold opacity-50"
             >
               {{ new Date(date.date).toLocaleDateString() }} ({{
                 date.count
               }}/{{ userCount }})
+              <Icon
+                v-if="selectedDates.includes(date.date)"
+                name="material-symbols:star-rounded"
+                class="text-coffee-mocha"
+                title="You have selected this date"
+              />
             </li>
           </ul>
         </div>
