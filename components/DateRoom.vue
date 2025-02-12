@@ -205,9 +205,20 @@ async function abandonDate() {
   }
 }
 
+const buttonContainerRef = ref<HTMLElement | null>(null);
+
 const hideButtons = () => {
   showOtherButtons.value = false;
   leaveDateConfirm.value = false;
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (
+    buttonContainerRef.value &&
+    !buttonContainerRef.value.contains(event.target as Node)
+  ) {
+    hideButtons();
+  }
 };
 
 const userHasSelectedDates = computed(() => {
@@ -248,6 +259,7 @@ function formatDate(dateString: string) {
 }
 
 onMounted(async () => {
+  document.addEventListener("click", handleClickOutside);
   if (isDateLoaded.value) {
     await fetchAllSelectedDates();
     const channel = supabase.channel(`date_${props.date!.id}`);
@@ -278,6 +290,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
   if (subscription) {
     supabase.removeChannel(subscription);
   }
@@ -291,7 +304,7 @@ watch(isDateLoaded, (newValue) => {
 </script>
 
 <template>
-  <div class="h-full sm:overflow-y-auto custom-scrollbar">
+  <div class="h-full sm:overflow-y-auto custom-scrollbar-alt">
     <div
       v-if="isDateLoaded"
       class="flex flex-col bg-coffee-foam items-center justify-center gap-4 p-4 w-full min-h-full"
@@ -315,7 +328,7 @@ watch(isDateLoaded, (newValue) => {
       </div>
 
       <div
-        class="flex flex-col gap-4 bg-coffee-latte w-full max-w-[450px] p-6 rounded shadow-md"
+        class="flex flex-col gap-4 bg-coffee-latte w-full max-w-[450px] p-6 rounded shadow-md overflow-y-auto custom-scrollbar-alt max-h-[250px] sm:max-h-[350px]"
       >
         <div>
           <h3 class="font-bold text-coffee-mocha">
@@ -425,7 +438,10 @@ watch(isDateLoaded, (newValue) => {
           Save Dates
         </button>
       </div>
-      <div class="w-full max-w-[450px] flex flex-col gap-2">
+      <div
+        class="w-full max-w-[450px] flex flex-col gap-2"
+        ref="buttonContainerRef"
+      >
         <button
           @click="leaveDate"
           class="w-full bg-coffee-latte py-3 px-6 text-coffee-foam font-bold rounded transition-colors sm:hover:bg-coffee-mocha"
@@ -448,7 +464,7 @@ watch(isDateLoaded, (newValue) => {
         <button
           v-if="showOtherButtons"
           @click="abandonDate"
-          class="w-full bg-red-400 py-3 px-6 text-coffee-foam font-bold rounded transition-colors sm:hover:bg-red-600"
+          class="w-full bg-red-600 py-3 px-6 text-coffee-foam font-bold rounded transition-colors sm:hover:bg-red-700"
         >
           Abandon date
         </button>

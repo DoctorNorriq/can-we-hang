@@ -157,11 +157,11 @@
 }
 
 .custom-scrollbar-alt::-webkit-scrollbar-track {
-  background: #6d4c41;
+  background: #4e342e;
 }
 
 .custom-scrollbar-alt::-webkit-scrollbar-thumb {
-  background: #d7ccc8;
+  background: #6d4c41;
 }
 
 /***** General *****/
