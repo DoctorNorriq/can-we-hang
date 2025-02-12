@@ -2,155 +2,270 @@
 import Calendar from "./Calendar.vue";
 
 const props = defineProps<{
-  room: {
+  date: {
     id: string;
     name: string;
     code: string;
   } | null;
 }>();
 
-const emit = defineEmits(["leaveRoom"]);
+const emit = defineEmits(["leaveDate", "updateUserData"]);
 
 const supabase = useSupabaseClient();
 const userStore = useUserStore();
 const selectedDates = ref<string[]>([]);
+const localSelectedDates = ref<string[]>([]);
 const allSelectedDates = ref<{ user_name: string; available_days: string[] }[]>(
   []
 );
+
+const allSelectedDatesWithCount = computed(() => {
+  const dateCount = new Map();
+  allSelectedDates.value.forEach((user) => {
+    user.available_days.forEach((date) => {
+      dateCount.set(date, (dateCount.get(date) || 0) + 1);
+    });
+  });
+  return Array.from(dateCount.entries())
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => b.count - a.count);
+});
+
 const showCalendar = ref(false);
 const commonDates = ref<string[]>([]);
 let subscription: any = null;
 
-const isRoomLoaded = computed(
-  () => props.room && props.room.id && props.room.name && props.room.code
+const isDateLoaded = computed(
+  () => props.date && props.date.id && props.date.name && props.date.code
+);
+
+const allUsers = computed(() =>
+  allSelectedDates.value.map((user) => user.user_name)
 );
 
 const userCount = computed(() => allSelectedDates.value.length);
 
-const userNames = computed(() =>
-  allSelectedDates.value.map((user) => user.user_name).join(", ")
+const usersChosen = computed(() =>
+  allSelectedDates.value
+    .filter((user) => user.available_days.length > 0)
+    .map((user) => user.user_name)
+);
+
+const usersNotChosen = computed(() =>
+  allSelectedDates.value
+    .filter((user) => user.available_days.length === 0)
+    .map((user) => user.user_name)
 );
 
 const availableDates = computed(() => {
-  if (userCount.value === 0) return [];
-  if (userCount.value === 1) return allSelectedDates.value[0].available_days;
-  return commonDates.value;
+  // If not all users have chosen dates, return an empty array
+  if (usersChosen.value.length !== userCount.value) {
+    return [];
+  }
+
+  // If there are at least two users and all have chosen dates
+  if (usersChosen.value.length >= 2) {
+    return allSelectedDatesWithCount.value
+      .filter((date) => date.count === userCount.value)
+      .map((date) => date.date);
+  }
+
+  // If there's only one user who has chosen dates
+  return allSelectedDatesWithCount.value.map((date) => date.date);
+});
+
+const otherSelectedDates = computed(() => {
+  // If no users have chosen dates, return an empty array
+  if (usersChosen.value.length === 0) {
+    return [];
+  }
+
+  // If not all users have chosen dates, show all selected dates
+  if (usersChosen.value.length < userCount.value) {
+    return allSelectedDatesWithCount.value;
+  }
+
+  // If all users have chosen dates, show dates that are not common to all
+  return allSelectedDatesWithCount.value.filter(
+    (date) => date.count < userCount.value && date.count > 0
+  );
 });
 
 async function fetchAllSelectedDates() {
-  if (!isRoomLoaded.value) return;
-
+  if (!isDateLoaded.value) return;
   try {
     const { data, error } = await supabase
       .from("availability")
       .select("user_name, available_days")
-      .eq("date_id", props.room!.id);
-
+      .eq("date_id", props.date!.id)
+      .eq("is_active", true);
     if (error) throw error;
-
-    // Filter out any entries with empty available_days arrays
-    allSelectedDates.value = (data || []).filter(
-      (entry) => entry.available_days.length > 0
-    );
+    allSelectedDates.value = data || [];
+    if (
+      !allSelectedDates.value.some((user) => user.user_name === userStore.name)
+    ) {
+      allSelectedDates.value.push({
+        user_name: userStore.name,
+        available_days: [],
+      });
+    }
     calculateCommonDates();
-
-    // Update the current user's selected dates if they exist
     const userDates = allSelectedDates.value.find(
       (user) => user.user_name === userStore.name
     );
     if (userDates) {
       selectedDates.value = userDates.available_days;
+      localSelectedDates.value = [...userDates.available_days];
     } else {
-      selectedDates.value = []; // Clear selected dates if user has no entry
+      selectedDates.value = [];
+      localSelectedDates.value = [];
     }
+    emit("updateUserData", {
+      userCount: userCount.value,
+      usersChosen: usersChosen.value,
+      usersNotChosen: usersNotChosen.value,
+    });
   } catch (error) {
     console.error("Error fetching dates:", error);
-    alert(
+    console.log(
       `Error fetching dates: ${(error as Error).message}. Please try again.`
     );
   }
 }
 
 function calculateCommonDates() {
-  if (allSelectedDates.value.length < 2) {
+  const nonEmptyDateArrays = allSelectedDates.value
+    .map((user) => user.available_days)
+    .filter((days) => days.length > 0);
+  if (nonEmptyDateArrays.length < 2) {
     commonDates.value = [];
     return;
   }
-
-  const dateArrays = allSelectedDates.value.map((user) => user.available_days);
-  commonDates.value = dateArrays.reduce((a, b) =>
+  commonDates.value = nonEmptyDateArrays.reduce((a, b) =>
     a.filter((date) => b.includes(date))
   );
 }
 
 async function saveDates() {
-  if (!isRoomLoaded.value) {
-    alert("Room data not fully loaded. Please try again.");
+  if (!isDateLoaded.value) {
+    console.log("Date data not fully loaded. Please try again.");
     return;
   }
-
   try {
-    if (selectedDates.value.length > 0) {
-      // If dates are selected, upsert them
-      const { error } = await supabase.from("availability").upsert(
-        {
-          date_id: props.room!.id,
-          user_name: userStore.name,
-          available_days: selectedDates.value,
-        },
-        {
-          onConflict: "date_id,user_name",
-          returning: "minimal",
-        }
-      );
-
-      if (error) throw error;
-    } else {
-      // If no dates are selected, delete the user's entry
-      const { error } = await supabase
-        .from("availability")
-        .delete()
-        .match({ date_id: props.room!.id, user_name: userStore.name });
-
-      if (error) throw error;
-    }
-
-    alert("Dates saved successfully!");
+    const { error } = await supabase.from("availability").upsert(
+      {
+        date_id: props.date!.id,
+        user_name: userStore.name,
+        available_days: localSelectedDates.value,
+      },
+      {
+        onConflict: "date_id,user_name",
+        returning: "minimal",
+      }
+    );
+    if (error) throw error;
+    selectedDates.value = [...localSelectedDates.value];
+    await fetchAllSelectedDates();
+    showCalendar.value = false;
+    console.log("Dates saved successfully!");
   } catch (error) {
     console.error("Error saving dates:", error);
-    alert(`Error saving dates: ${(error as Error).message}. Please try again.`);
+    console.log(
+      `Error saving dates: ${(error as Error).message}. Please try again.`
+    );
   }
 }
 
-function leaveRoom() {
-  emit("leaveRoom");
+const leaveDateConfirm = ref(false);
+const showOtherButtons = ref(false);
+
+function leaveDate() {
+  if (!leaveDateConfirm.value) {
+    leaveDateConfirm.value = true;
+    showOtherButtons.value = true;
+    return;
+  }
+  emit("leaveDate");
 }
+
+async function abandonDate() {
+  if (!isDateLoaded.value) return;
+  try {
+    console.log("Abandoning date...");
+    const { error } = await supabase
+      .from("availability")
+      .update({ is_active: false, available_days: [] })
+      .match({ date_id: props.date!.id, user_name: userStore.name });
+    if (error) throw error;
+    console.log("Date abandoned successfully");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log("Emitting leaveDate event");
+    emit("leaveDate");
+  } catch (error) {
+    console.error("Error abandoning date:", error);
+    console.log(
+      `Error abandoning date: ${(error as Error).message}. Please try again.`
+    );
+  }
+}
+
+const hideButtons = () => {
+  showOtherButtons.value = false;
+  leaveDateConfirm.value = false;
+};
+
+const userHasSelectedDates = computed(() => {
+  const userDates = allSelectedDates.value.find(
+    (user) => user.user_name === userStore.name
+  );
+  return userDates && userDates.available_days.length > 0;
+});
 
 function toggleCalendar() {
   showCalendar.value = !showCalendar.value;
 }
 
-onMounted(async () => {
-  if (isRoomLoaded.value) {
-    await fetchAllSelectedDates();
+function copyDateCode() {
+  if (props.date && props.date.code) {
+    navigator.clipboard
+      .writeText(props.date.code)
+      .then(() => {
+        console.log("Date code copied to clipboard!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy text: ", err);
+        console.log("Failed to copy date code. Please try again.");
+      });
+  }
+}
 
-    // Set up real-time subscription
-    subscription = supabase
-      .channel("availability_changes")
+onMounted(async () => {
+  if (isDateLoaded.value) {
+    await fetchAllSelectedDates();
+    const channel = supabase.channel(`date_${props.date!.id}`);
+    subscription = channel
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "availability",
-          filter: `date_id=eq.${props.room!.id}`,
+          filter: `date_id=eq.${props.date!.id}`,
         },
         (payload) => {
           console.log("Change received!", payload);
-          fetchAllSelectedDates();
+          fetchAllSelectedDates().then(() => {
+            console.log(
+              "Updated allSelectedDates after fetch:",
+              allSelectedDates.value
+            );
+          });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Subscription status:", status);
+      });
+    console.log("Subscription set up:", subscription);
   }
 });
 
@@ -160,7 +275,7 @@ onUnmounted(() => {
   }
 });
 
-watch(isRoomLoaded, (newValue) => {
+watch(isDateLoaded, (newValue) => {
   if (newValue) {
     fetchAllSelectedDates();
   }
@@ -168,59 +283,143 @@ watch(isRoomLoaded, (newValue) => {
 </script>
 
 <template>
-  <div v-if="isRoomLoaded" class="flex flex-col gap-4 max-w-md mx-auto">
-    <h1 class="text-3xl font-bold text-blue-800">{{ room!.name }}</h1>
-    <p class="text-green-700">Room Code: {{ room!.code }}</p>
-    <p class="text-blue-600">Welcome, {{ userStore.name }}!</p>
-
-    <div class="bg-orange-400 p-6 rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold text-white mb-4">Select Available Dates</h2>
-      <button
-        @click="toggleCalendar"
-        class="bg-blue-600 py-2 px-4 text-white font-bold rounded-full transition-colors hover:bg-blue-700 w-full mb-4"
-      >
-        {{ showCalendar ? "Hide Calendar" : "Show Calendar" }}
-      </button>
-      <Calendar v-if="showCalendar" v-model="selectedDates" />
-      <button
-        @click="saveDates"
-        class="bg-blue-600 py-2 px-4 text-white font-bold rounded-full transition-colors hover:bg-blue-700 w-full mt-4"
-      >
-        Save Dates
-      </button>
-    </div>
-
-    <div class="bg-green-400 p-6 rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold text-white mb-4">
-        {{ userCount > 1 ? "Common Available Dates" : "Available Dates" }}
-      </h2>
-      <p class="text-white mb-2">
-        {{ userCount }} user{{ userCount !== 1 ? "s" : "" }} have entered dates:
-        <span class="font-bold">{{ userNames }}</span>
-      </p>
-      <template v-if="userCount > 0">
-        <ul v-if="availableDates.length > 0">
-          <li v-for="date in availableDates" :key="date" class="text-white">
-            {{ new Date(date).toLocaleDateString() }}
-          </li>
-        </ul>
-        <p v-else class="text-white">No common dates found.</p>
-      </template>
-      <p v-else class="text-white">No dates have been entered yet.</p>
-      <p v-if="userCount === 1" class="text-white mt-2">
-        These are the dates selected by the first user. Common dates will be
-        shown when more users enter their availability.
-      </p>
-    </div>
-
-    <button
-      @click="leaveRoom"
-      class="bg-red-500 py-2 px-4 text-white font-bold rounded-full transition-colors hover:bg-red-600"
+  <div class="h-full sm:overflow-y-auto">
+    <div
+      v-if="isDateLoaded"
+      class="flex flex-col bg-coffee-foam items-center justify-center gap-4 p-4 w-full min-h-full"
     >
-      Leave Room
-    </button>
-  </div>
-  <div v-else class="text-center text-xl font-bold text-blue-800">
-    Loading room data...
+      <div class="flex flex-col items-center w-full max-w-[450px]">
+        <h1
+          class="text-[3rem] font-bold text-coffee-mocha text-center break-words w-full"
+        >
+          {{ date!.name }}?
+        </h1>
+        <div class="flex items-center mt-2">
+          <Icon name="tabler:hash" class="text-blue-600 text-[1.25rem]" />
+          <span
+            class="text-blue-600 font-bold cursor-pointer"
+            @click="copyDateCode"
+            title="Click to copy date code"
+          >
+            {{ date!.code }}
+          </span>
+        </div>
+      </div>
+      <div
+        class="flex flex-col gap-4 w-full max-w-[450px] bg-coffee-mocha p-6 rounded shadow-md"
+      >
+        <div>
+          <h3 class="text-2xl font-bold text-coffee-foam">Select dates</h3>
+          <p v-if="userHasSelectedDates" class="text-coffee-foam">
+            You have proposed some dates - good job!
+          </p>
+          <p v-else class="text-coffee-foam">
+            You haven't yet proposed any dates. Press the calender to get
+            started!
+          </p>
+        </div>
+        <button
+          @click="toggleCalendar"
+          class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
+          :class="
+            showCalendar
+              ? 'bg-coffee-cappuccino text-coffee-foam'
+              : 'bg-coffee-foam text-coffee-mocha'
+          "
+        >
+          {{ showCalendar ? "Hide Calendar" : "Show Calendar" }}
+        </button>
+        <Calendar v-if="showCalendar" v-model="localSelectedDates" />
+        <button
+          v-if="showCalendar"
+          @click="saveDates"
+          class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
+        >
+          Save Dates
+        </button>
+      </div>
+      <div
+        class="flex flex-col gap-4 bg-coffee-latte w-full max-w-[450px] p-6 rounded shadow-md"
+      >
+        <div>
+          <h3 class="font-bold text-coffee-mocha">
+            {{
+              usersChosen.length > 1
+                ? "Possible dates in common"
+                : "Possible dates"
+            }}
+          </h3>
+          <template v-if="usersChosen.length > 0">
+            <p v-if="usersChosen.length === 1" class="text-coffee-mocha mb-4">
+              These are only the dates proposed by the first user. Possible
+              dates
+              <span class="text-coffee-mocha font-bold">in common</span> will be
+              shown, when more users enter their availability.
+            </p>
+            <ul v-if="availableDates.length > 0">
+              <li
+                v-for="date in availableDates"
+                :key="date"
+                class="text-coffee-mocha font-bold"
+              >
+                {{ new Date(date).toLocaleDateString() }}
+              </li>
+            </ul>
+            <p v-else class="text-coffee-mocha">
+              No dates in common. Try harder!
+            </p>
+          </template>
+          <p v-else class="text-coffee-mocha">
+            No dates have been proposed yet.
+          </p>
+        </div>
+        <div v-if="otherSelectedDates.length > 0">
+          <h3 class="font-bold text-coffee-mocha">Other proposed dates</h3>
+          <ul>
+            <li
+              v-for="date in otherSelectedDates"
+              :key="date.date"
+              class="text-coffee-mocha font-bold opacity-50"
+            >
+              {{ new Date(date.date).toLocaleDateString() }} ({{
+                date.count
+              }}/{{ userCount }})
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- ... other code ... -->
+      <div class="w-full max-w-[450px] flex flex-col gap-2">
+        <button
+          @click="leaveDate"
+          class="w-full bg-coffee-latte py-3 px-6 text-coffee-foam font-bold rounded transition-colors sm:hover:bg-coffee-mocha"
+          :class="!leaveDateConfirm ? 'bg-coffee-latte' : 'bg-coffee-mocha'"
+        >
+          {{ leaveDateConfirm ? "Confirm" : "Leave date room" }}
+        </button>
+        <button
+          v-if="showOtherButtons"
+          @click="hideButtons"
+          class="w-full bg-coffee-latte py-3 px-6 text-coffee-mocha font-bold rounded transition-colors sm:hover:border-coffee-mocha border-2"
+        >
+          Cancel
+        </button>
+        <span
+          v-if="showOtherButtons"
+          class="text-coffee-mocha font-bold text-center"
+          >or</span
+        >
+        <button
+          v-if="showOtherButtons"
+          @click="abandonDate"
+          class="w-full bg-red-400 py-3 px-6 text-coffee-foam font-bold rounded transition-colors sm:hover:bg-red-600"
+        >
+          Abandon date
+        </button>
+      </div>
+    </div>
+    <div v-else class="text-center text-xl font-bold text-coffee-mocha">
+      Loading room data...
+    </div>
   </div>
 </template>
