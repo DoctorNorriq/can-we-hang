@@ -251,7 +251,7 @@ function updateUserData(data) {
             v-model="dateId"
             class="text-coffee-mocha py-3 px-6 rounded border-2 border-coffee-foam focus:outline-none focus:border-coffee-bean"
             type="text"
-            placeholder="What is the ID of the date room?"
+            placeholder="Enter ID of the date room"
           />
           <button
             class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
@@ -278,7 +278,7 @@ function updateUserData(data) {
             v-model="dateName"
             class="text-coffee-mocha py-3 px-6 rounded border-2 border-coffee-foam focus:outline-none focus:border-coffee-bean"
             type="text"
-            placeholder="What should we call your date room?"
+            placeholder="Date name?"
           />
           <button
             class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
@@ -287,9 +287,15 @@ function updateUserData(data) {
           </button>
         </form>
       </div>
-      <p class="text-coffee-mocha text-[1.25rem]" v-else>
-        Enter and save your name to create or join a date room.
-      </p>
+      <div class="flex flex-col items-center gap-2" v-else>
+        <Icon
+          name="ph:arrow-fat-up-fill"
+          class="text-coffee-mocha text-[4rem] animate-bounce"
+        />
+        <p class="text-coffee-mocha text-[1.25rem] text-center">
+          Enter and save your name to create or join a date room.
+        </p>
+      </div>
     </div>
     <div v-if="currentDate" class="flex flex-col w-full h-full overflow-hidden">
       <DateRoom
