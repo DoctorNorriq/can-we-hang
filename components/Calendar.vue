@@ -2,9 +2,7 @@
 const props = defineProps<{
   modelValue: string[];
 }>();
-
 const emit = defineEmits(["update:modelValue"]);
-
 const currentDate = ref(new Date());
 const selectedDates = ref(props.modelValue);
 
@@ -17,7 +15,8 @@ const daysInMonth = computed(() => {
 const firstDayOfMonth = computed(() => {
   const year = currentDate.value.getFullYear();
   const month = currentDate.value.getMonth();
-  return new Date(year, month, 1).getDay();
+  let day = new Date(year, month, 1).getDay() - 1;
+  return day < 0 ? 6 : day; // Adjust for Monday start (0 = Monday, 6 = Sunday)
 });
 
 const days = computed(() => {
@@ -29,7 +28,7 @@ const days = computed(() => {
 });
 
 const monthName = computed(() => {
-  return currentDate.value.toLocaleString("default", { month: "long" });
+  return currentDate.value.toLocaleString("da-DK", { month: "long" });
 });
 
 function prevMonth() {
@@ -90,7 +89,7 @@ function isSelected(day: number) {
     </div>
     <div class="grid grid-cols-7 gap-1">
       <div
-        v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
+        v-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']"
         :key="day"
         class="text-center text-white font-bold"
       >

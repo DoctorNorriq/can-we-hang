@@ -140,7 +140,7 @@ function updateUserData(data) {
 </script>
 
 <template>
-  <div class="grid sm:grid-cols-2 bg-coffee-foam h-[100dvh]">
+  <div class="grid sm:grid-cols-2 bg-coffee-foam h-auto sm:h-[100dvh]">
     <div
       class="relative flex flex-col items-center justify-center bg-coffee-mocha"
     >
@@ -152,7 +152,7 @@ function updateUserData(data) {
         </h1>
         <p
           v-if="userStore.name && !editName && !currentDate"
-          class="text-coffee-foam"
+          class="text-coffee-foam mb-4"
         >
           Find out in no time,
           <span
@@ -183,7 +183,7 @@ function updateUserData(data) {
 
       <div
         v-if="currentDate"
-        class="flex flex-col gap-4 w-full max-w-[450px] p-4"
+        class="flex flex-col gap-4 w-full max-w-[450px] p-4 pb-8"
       >
         <div class="w-full">
           <h3 class="text-coffee-foam mb-2">

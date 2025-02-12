@@ -235,6 +235,18 @@ function copyDateCode() {
   }
 }
 
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayOfWeek = days[date.getDay()];
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year} (${dayOfWeek})`;
+}
+
 onMounted(async () => {
   if (isDateLoaded.value) {
     await fetchAllSelectedDates();
@@ -301,6 +313,85 @@ watch(isDateLoaded, (newValue) => {
           </span>
         </div>
       </div>
+
+      <div
+        class="flex flex-col gap-4 bg-coffee-latte w-full max-w-[450px] p-6 rounded shadow-md"
+      >
+        <div>
+          <h3 class="font-bold text-coffee-mocha">
+            {{
+              usersChosen.length > 1
+                ? "Possible dates in common"
+                : "Possible dates"
+            }}
+          </h3>
+          <template v-if="usersChosen.length > 0">
+            <p v-if="usersChosen.length === 1" class="text-coffee-mocha mb-4">
+              These are only the dates proposed by the first user. Possible
+              dates
+              <span class="text-coffee-mocha font-bold">in common</span> will be
+              shown, when more users enter their availability.
+            </p>
+            <ul v-if="availableDates.length > 0 && usersChosen.length > 1">
+              <li
+                v-for="date in availableDates"
+                :key="date"
+                class="flex items-center text-coffee-mocha font-bold"
+              >
+                {{ formatDate(date) }}
+                <Icon
+                  v-if="selectedDates.includes(date)"
+                  name="material-symbols:star-rounded"
+                  class="text-coffee-mocha"
+                  title="You have selected this date"
+                />
+              </li>
+            </ul>
+            <ul v-if="usersChosen.length === 1">
+              <li
+                v-for="date in allSelectedDatesWithCount"
+                :key="date.date"
+                class="flex items-center text-coffee-mocha font-bold"
+              >
+                {{ formatDate(date.date) }}
+                <Icon
+                  v-if="selectedDates.includes(date.date)"
+                  name="material-symbols:star-rounded"
+                  class="text-coffee-mocha"
+                  title="You have selected this date"
+                />
+              </li>
+            </ul>
+            <p
+              v-if="availableDates.length === 0 && usersChosen.length > 1"
+              class="text-coffee-mocha"
+            >
+              No dates in common. Try harder!
+            </p>
+          </template>
+          <p v-else class="text-coffee-mocha">
+            No dates have been proposed yet.
+          </p>
+        </div>
+        <div v-if="otherSelectedDates.length > 0 && usersChosen.length > 1">
+          <h3 class="font-bold text-coffee-mocha">Other proposed dates</h3>
+          <ul>
+            <li
+              v-for="date in otherSelectedDates"
+              :key="date.date"
+              class="flex items-center text-coffee-mocha font-bold opacity-50"
+            >
+              {{ formatDate(date.date) }} ({{ date.count }}/{{ userCount }})
+              <Icon
+                v-if="selectedDates.includes(date.date)"
+                name="material-symbols:star-rounded"
+                class="text-coffee-mocha"
+                title="You have selected this date"
+              />
+            </li>
+          </ul>
+        </div>
+      </div>
       <div
         class="flex flex-col gap-4 w-full max-w-[450px] bg-coffee-mocha p-6 rounded shadow-md"
       >
@@ -334,87 +425,6 @@ watch(isDateLoaded, (newValue) => {
           Save Dates
         </button>
       </div>
-      <div
-        class="flex flex-col gap-4 bg-coffee-latte w-full max-w-[450px] p-6 rounded shadow-md"
-      >
-        <div>
-          <h3 class="font-bold text-coffee-mocha">
-            {{
-              usersChosen.length > 1
-                ? "Possible dates in common"
-                : "Possible dates"
-            }}
-          </h3>
-          <template v-if="usersChosen.length > 0">
-            <p v-if="usersChosen.length === 1" class="text-coffee-mocha mb-4">
-              These are only the dates proposed by the first user. Possible
-              dates
-              <span class="text-coffee-mocha font-bold">in common</span> will be
-              shown, when more users enter their availability.
-            </p>
-            <ul v-if="availableDates.length > 0 && usersChosen.length > 1">
-              <li
-                v-for="date in availableDates"
-                :key="date"
-                class="flex items-center text-coffee-mocha font-bold"
-              >
-                {{ new Date(date).toLocaleDateString() }}
-                <Icon
-                  v-if="selectedDates.includes(date)"
-                  name="material-symbols:star-rounded"
-                  class="text-coffee-mocha"
-                  title="You have selected this date"
-                />
-              </li>
-            </ul>
-            <ul v-if="usersChosen.length === 1">
-              <li
-                v-for="date in allSelectedDatesWithCount"
-                :key="date.date"
-                class="flex items-center text-coffee-mocha font-bold"
-              >
-                {{ new Date(date.date).toLocaleDateString() }}
-                <Icon
-                  v-if="selectedDates.includes(date.date)"
-                  name="material-symbols:star-rounded"
-                  class="text-coffee-mocha"
-                  title="You have selected this date"
-                />
-              </li>
-            </ul>
-            <p
-              v-if="availableDates.length === 0 && usersChosen.length > 1"
-              class="text-coffee-mocha"
-            >
-              No dates in common. Try harder!
-            </p>
-          </template>
-          <p v-else class="text-coffee-mocha">
-            No dates have been proposed yet.
-          </p>
-        </div>
-        <div v-if="otherSelectedDates.length > 0 && usersChosen.length > 1">
-          <h3 class="font-bold text-coffee-mocha">Other proposed dates</h3>
-          <ul>
-            <li
-              v-for="date in otherSelectedDates"
-              :key="date.date"
-              class="flex items-center text-coffee-mocha font-bold opacity-50"
-            >
-              {{ new Date(date.date).toLocaleDateString() }} ({{
-                date.count
-              }}/{{ userCount }})
-              <Icon
-                v-if="selectedDates.includes(date.date)"
-                name="material-symbols:star-rounded"
-                class="text-coffee-mocha"
-                title="You have selected this date"
-              />
-            </li>
-          </ul>
-        </div>
-      </div>
-      <!-- ... other code ... -->
       <div class="w-full max-w-[450px] flex flex-col gap-2">
         <button
           @click="leaveDate"
