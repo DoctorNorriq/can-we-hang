@@ -148,7 +148,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #d7ccc8;
+  background: #6d4c41;
 }
 
 /***** General *****/
@@ -170,6 +170,7 @@ html:focus-within {
 }
 
 body {
+  font-family: Lato, sans-serif;
   text-rendering: optimizeSpeed;
   line-height: 1.5;
 }

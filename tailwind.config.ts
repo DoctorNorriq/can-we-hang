@@ -14,6 +14,10 @@ export default <Partial<Config>>{
           foam: "#EFEBE9",
         },
       },
+      fontFamily: {
+        sans: ["Lato", "sans-serif"],
+        handwritten: ["Caveat", "cursive"],
+      },
     },
   },
 };

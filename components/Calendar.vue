@@ -1,7 +1,9 @@
 <script setup lang="ts">
 const props = defineProps<{
   modelValue: string[];
+  proposedDates?: string[];
 }>();
+
 const emit = defineEmits(["update:modelValue"]);
 const currentDate = ref(new Date());
 const selectedDates = ref(props.modelValue);
@@ -66,6 +68,13 @@ function isSelected(day: number) {
   ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   return selectedDates.value.includes(dateString);
 }
+
+function isProposed(day: number) {
+  const dateString = `${currentDate.value.getFullYear()}-${String(
+    currentDate.value.getMonth() + 1
+  ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return props.proposedDates?.includes(dateString);
+}
 </script>
 
 <template>
@@ -108,6 +117,8 @@ function isSelected(day: number) {
           'transition-colors text-center p-2 cursor-pointer rounded font-bold',
           isSelected(day)
             ? 'bg-coffee-bean text-white'
+            : isProposed(day)
+            ? 'bg-coffee-latte text-coffee-bean sm:hover:bg-coffee-bean sm:hover:text-white'
             : 'bg-white text-coffee-bean sm:hover:bg-coffee-bean sm:hover:text-white',
         ]"
       >

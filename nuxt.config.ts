@@ -8,6 +8,16 @@ export default defineNuxtConfig({
     "@nuxtjs/device",
     "@nuxtjs/google-fonts",
   ],
+  googleFonts: {
+    families: {
+      Lato: [300, 400, 700],
+      Caveat: [400, 700],
+    },
+    display: "swap",
+    prefetch: true,
+    preconnect: true,
+    preload: true,
+  },
   runtimeConfig: {
     public: {
       supabase: {

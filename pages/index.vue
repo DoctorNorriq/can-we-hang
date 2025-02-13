@@ -18,7 +18,7 @@ onMounted(() => {
 });
 
 async function saveName() {
-  userStore.setName(userName.value);
+  userStore.setName(userName.value.trim());
   editName.value = false;
   console.log("Name saved:", userStore.name);
 }
@@ -137,6 +137,12 @@ function updateUserData(data) {
   usersChosen.value = data.usersChosen;
   usersNotChosen.value = data.usersNotChosen;
 }
+
+const hoveredUser = ref<string | null>(null);
+
+function updateHoveredUser(user: string | null) {
+  hoveredUser.value = user;
+}
 </script>
 
 <template>
@@ -187,9 +193,7 @@ function updateUserData(data) {
       >
         <div class="w-full">
           <h3 class="text-coffee-foam mb-2">
-            {{ usersChosen.length }}/{{ userCount }} friend{{
-              userCount !== 1 ? "s" : ""
-            }}
+            {{ usersChosen.length }}/{{ userCount }}
             have proposed dates
           </h3>
           <div
@@ -197,17 +201,21 @@ function updateUserData(data) {
           >
             <div
               v-for="user in usersChosen"
-              class="flex items-center gap-1 text-coffee-foam font-bold mb-1"
+              :key="user"
+              class="flex items-center gap-1 text-coffee-foam font-bold cursor-pointer mb-1 font-handwritten text-[1.5rem] w-fit"
+              @mouseover="updateHoveredUser(user)"
+              @mouseleave="updateHoveredUser(null)"
+              :class="{ '!text-coffee-latte': hoveredUser === user }"
             >
               <Icon
                 class="text-coffee-foam text-[1.5rem]"
                 name="mdi:check-bold"
               />
-              {{ user }} {{ user === userName ? "(you)" : "" }}
+              {{ user }} {{ user === userName ? "(me)" : "" }}
               <Icon
                 v-if="user === userName"
                 name="material-symbols:star-rounded"
-                class="text-coffee-foam"
+                class="text-coffee-foam text-[1.5rem]"
                 title="You have selected this date"
               />
             </div>
@@ -217,13 +225,16 @@ function updateUserData(data) {
             ></div>
             <div
               v-for="user in usersNotChosen"
-              class="flex items-center gap-1 text-coffee-foam font-bold mb-1"
+              class="flex items-center gap-1 text-coffee-foam font-bold mb-1 cursor-pointer font-handwritten text-[1.5rem] w-fit"
+              @mouseover="updateHoveredUser(user)"
+              @mouseleave="updateHoveredUser(null)"
+              :class="{ '!text-coffee-latte': hoveredUser === user }"
             >
               <Icon
                 class="text-coffee-foam text-[1.5rem]"
                 name="mdi:close-thick"
               />
-              {{ user }} {{ user === userName ? "(you)" : "" }}
+              {{ user }} {{ user === userName ? "(me)" : "" }}
               <Icon
                 v-if="user === userName"
                 name="material-symbols:star-rounded"
@@ -270,9 +281,7 @@ function updateUserData(data) {
         v-if="userStore.name"
         class="bg-coffee-latte p-6 rounded shadow-md w-full max-w-[450px]"
       >
-        <h2 class="text-2xl font-bold text-coffee-mocha mb-4">
-          Create a date room
-        </h2>
+        <h2 class="text-2xl font-bold text-coffee-mocha mb-4">Create a date</h2>
         <form @submit.prevent="createDate" class="flex flex-col gap-4">
           <input
             v-model="dateName"
@@ -281,7 +290,7 @@ function updateUserData(data) {
             placeholder="Date name?"
           />
           <button
-            class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
+            class="bg-coffee-mocha py-3 px-6 text-coffee-foam font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
           >
             Create
           </button>
@@ -295,7 +304,7 @@ function updateUserData(data) {
           />
         </div>
         <p class="text-coffee-mocha text-[1.25rem] text-center">
-          Enter and save your name to create or join a date room.
+          Enter and save your name, to gain access to everything!
         </p>
       </div>
     </div>
@@ -303,6 +312,7 @@ function updateUserData(data) {
       <DateRoom
         :date="currentDate"
         :user-name="userName"
+        :hovered-user="hoveredUser"
         @leave-date="leaveDate"
         @update-user-data="updateUserData"
       />
