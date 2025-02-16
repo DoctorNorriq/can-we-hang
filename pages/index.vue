@@ -265,7 +265,7 @@ function updateHoveredUser(user: string | null) {
             placeholder="Enter ID of the date room"
           />
           <button
-            class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
+            class="bg-coffee-foam py-3 px-6 text-coffee-mocha border-2 sm:hover:border-coffee-bean font-bold rounded transition-colors sm:hover:bg-coffee-bean hover:text-coffee-foam"
           >
             Join
           </button>
@@ -290,7 +290,7 @@ function updateHoveredUser(user: string | null) {
             placeholder="Date name?"
           />
           <button
-            class="bg-coffee-mocha py-3 px-6 text-coffee-foam font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
+            class="bg-coffee-mocha py-3 px-6 text-coffee-foam border-2 border-coffee-mocha sm:hover:border-coffee-bean font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
           >
             Create
           </button>
