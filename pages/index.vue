@@ -197,7 +197,7 @@ function updateHoveredUser(user: string | null) {
             have proposed dates
           </h3>
           <div
-            class="max-h-[200px] sm:max-h-[500px] sm:overflow-y-auto custom-scrollbar-alt"
+            class="max-h-[200px] sm:max-h-[500px] sm:overflow-y-auto custom-scrollbar"
           >
             <div
               v-for="user in usersChosen"

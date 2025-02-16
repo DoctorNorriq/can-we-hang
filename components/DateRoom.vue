@@ -419,7 +419,7 @@ watch(isDateLoaded, (newValue) => {
         </div>
       </div>
       <div
-        class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md overflow-y-auto custom-scrollbar max-h-[300px] sm:max-h-[350px]"
+        class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md overflow-y-auto custom-scrollbar-thin max-h-[300px] sm:max-h-[350px]"
         :class="userHasSelectedDates ? 'bg-coffee-mocha' : 'bg-coffee-latte'"
       >
         <div>
@@ -458,7 +458,10 @@ watch(isDateLoaded, (newValue) => {
                           allSelectedDatesWithCount.find((d) => d.date === date)
                             ?.count >= highestDateCount,
                       },
-                      { 'bg-blue-500': hoveredUserDates.includes(date) },
+                      {
+                        'bg-coffee-cappuccino !text-coffee-foam':
+                          hoveredUserDates.includes(date),
+                      },
                       selectedDates.includes(date) &&
                       !localSelectedDates.includes(date)
                         ? 'opacity-75 full-width-line-through'
