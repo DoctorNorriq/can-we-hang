@@ -433,16 +433,16 @@ watch(isDateLoaded, (newValue) => {
           <template v-if="usersChosen.length > 0">
             <div v-if="Object.keys(groupedDates).length > 0">
               <div v-for="(dates, monthYear) in groupedDates" :key="monthYear">
-                <h4
+                <h5
                   :class="
                     userHasSelectedDates
-                      ? 'text-coffee-foam'
-                      : 'text-coffee-mocha'
+                      ? 'text-coffee-foam opacity-50'
+                      : 'text-coffee-mocha opacity-50'
                   "
-                  class="font-bold mt-4 mb-2"
+                  class="mt-4 mb-1"
                 >
                   {{ monthYear }}
-                </h4>
+                </h5>
                 <ul class="flex flex-col gap-1">
                   <li
                     v-for="date in dates"
@@ -555,14 +555,16 @@ watch(isDateLoaded, (newValue) => {
             Other proposed dates
           </h3>
           <div v-for="(dates, monthYear) in groupedOtherDates" :key="monthYear">
-            <h4
+            <h5
               :class="
-                userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+                userHasSelectedDates
+                  ? 'text-coffee-foam opacity-50'
+                  : 'text-coffee-mocha opacity-50'
               "
-              class="font-bold mt-4 mb-2"
+              class="mt-4 mb-1"
             >
               {{ monthYear }}
-            </h4>
+            </h5>
             <ul class="flex flex-col gap-1">
               <li
                 v-for="date in dates"
