@@ -186,6 +186,7 @@ async function saveDates() {
       currentCalendarMonth.value = new Date(localSelectedDates.value[0]);
     }
     showCalendar.value = false;
+    previouslySelectedDates.value = [];
     console.log("Dates saved successfully!");
   } catch (error) {
     console.error("Error saving dates:", error);
