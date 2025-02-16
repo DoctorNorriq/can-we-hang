@@ -8,7 +8,7 @@ const props = defineProps<{
   currentMonth?: Date;
 }>();
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "dateToggled"]);
 
 const currentDate = ref(new Date());
 const selectedDates = ref(props.modelValue);
@@ -75,6 +75,7 @@ function toggleDate(day: number) {
     selectedDates.value.push(dateString);
   }
   emit("update:modelValue", selectedDates.value);
+  emit("dateToggled", dateString);
 }
 
 function isSelected(day: number) {
@@ -224,15 +225,6 @@ emit("update:modelValue", selectedDates.value);
       >
         {{ day }}
       </div>
-    </div>
-    <div class="flex justify-center my-2">
-      <button
-        @click="toggleAllDates"
-        class="text-coffee-bean font-bold rounded transition-colors"
-        :disabled="selectedDates.length === 0 && !isAllRemoved"
-      >
-        {{ isAllRemoved ? "Restore All Dates" : "Remove All Dates" }}
-      </button>
     </div>
   </div>
 </template>

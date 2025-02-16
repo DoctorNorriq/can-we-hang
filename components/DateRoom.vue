@@ -358,6 +358,27 @@ const groupedOtherDates = computed(() => {
   return groups;
 });
 
+const previouslySelectedDates = ref<string[]>([]);
+const isAllRemoved = ref(false);
+
+function toggleAllDates() {
+  if (!isAllRemoved.value) {
+    previouslySelectedDates.value = [...localSelectedDates.value];
+    localSelectedDates.value = [];
+    isAllRemoved.value = true;
+  } else {
+    localSelectedDates.value = [...previouslySelectedDates.value];
+    isAllRemoved.value = false;
+  }
+}
+
+function handleDateToggled(date: string) {
+  if (isAllRemoved.value) {
+    previouslySelectedDates.value = [];
+    isAllRemoved.value = false;
+  }
+}
+
 onMounted(async () => {
   document.addEventListener("click", handleClickOutside);
   if (isDateLoaded.value) {
@@ -633,14 +654,38 @@ watch(isDateLoaded, (newValue) => {
         class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md"
         :class="userHasSelectedDates ? 'bg-coffee-latte' : 'bg-coffee-mocha'"
       >
-        <h3
-          class="text-2xl text-coffee-foam"
-          :class="
-            userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
-          "
-        >
-          Select dates
-        </h3>
+        <div class="flex justify-center items-center gap-2">
+          <h3
+            class="text-2xl"
+            :class="
+              userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
+            "
+          >
+            Select dates
+          </h3>
+          <div
+            v-if="
+              selectedDates.length > 0 ||
+              localSelectedDates.length > 0 ||
+              previouslySelectedDates.length > 0
+            "
+            class="flex justify-center my-2"
+          >
+            <button
+              @click="toggleAllDates"
+              class="flex items-center text-coffee-foam transition-colors opacity-50 sm:hover:opacity-100"
+            >
+              <Icon
+                :name="
+                  isAllRemoved
+                    ? 'material-symbols:settings-backup-restore'
+                    : 'material-symbols:delete-sharp'
+                "
+                class="icon-size text-inherit"
+              />
+            </button>
+          </div>
+        </div>
 
         <p
           v-if="userProposedDatesCount === 1 && !showCalendar"
@@ -709,6 +754,7 @@ watch(isDateLoaded, (newValue) => {
           :proposedDates="allProposedDates"
           :userHasSelectedDates="userHasSelectedDates"
           :currentMonth="currentCalendarMonth"
+          @dateToggled="handleDateToggled"
         />
         <div class="flex flex-col gap-2">
           <button

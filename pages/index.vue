@@ -6,6 +6,9 @@ const currentDate = ref(null);
 const userStore = useUserStore();
 const userName = ref("");
 const editName = ref(false);
+const isLoading = ref<boolean | string>(false);
+const showError = ref<boolean | string>(false);
+const errorMessage = ref("");
 
 // New reactive variables for user data
 const userCount = ref(0);
@@ -24,56 +27,78 @@ async function saveName() {
 }
 
 async function createDate() {
-  if (!dateName.value || !userName.value) {
-    console.log("Please enter your name and the name of the date :)");
+  if (!dateName.value.trim()) {
+    showError.value = "create";
+    errorMessage.value = "Please enter a name for your date room.";
     return;
   }
+  if (!userName.value.trim()) {
+    showError.value = "create";
+    errorMessage.value = "Please enter your name before creating a date room.";
+    return;
+  }
+
+  isLoading.value = "create";
+  showError.value = false;
+  errorMessage.value = "";
+
   try {
-    // Create the date
     const { data, error } = await supabase
       .from("dates")
-      .insert({ name: dateName.value })
+      .insert({ name: dateName.value.trim() })
       .select();
     if (error) throw error;
     if (!data || data.length === 0)
       throw new Error("No data returned after insert");
-    // Add the creator to the availability table
+
     const { error: availabilityError } = await supabase
       .from("availability")
       .insert({
         date_id: data[0].id,
-        user_name: userName.value,
-        available_days: [], // Empty array for days
+        user_name: userName.value.trim(),
+        available_days: [],
       });
     if (availabilityError) throw availabilityError;
-    // Update local state
-    userStore.setName(userName.value);
+
+    userStore.setName(userName.value.trim());
     currentDate.value = data[0];
     dateName.value = "";
   } catch (error) {
     console.error("Error creating date:", error);
-    console.log(
-      `Error creating date: ${
-        error.message || "Unknown error"
-      }. Please try again.`
-    );
+    showError.value = "create";
+    errorMessage.value =
+      "Oops! We couldn't create your date room. Please try again later.";
+  } finally {
+    isLoading.value = false;
   }
 }
 
 async function joinDate() {
-  if (!dateId.value || !userName.value) {
-    console.log("Please enter a DATE ID and your name");
+  if (!dateId.value.trim()) {
+    showError.value = "join";
+    errorMessage.value =
+      "Please enter the ID of the date room you want to join.";
     return;
   }
+  if (!userName.value.trim()) {
+    showError.value = "join";
+    errorMessage.value = "Please enter your name before joining a date room.";
+    return;
+  }
+
+  isLoading.value = "join";
+  showError.value = false;
+  errorMessage.value = "";
+
   try {
-    // First, check if the date exists
     const { data: dateData, error: dateError } = await supabase
       .from("dates")
       .select("*")
-      .eq("code", dateId.value.toUpperCase())
+      .eq("code", dateId.value.trim().toUpperCase())
       .single();
-    if (dateError) throw dateError;
-    if (!dateData) throw new Error("Invalid DATE ID");
+
+    if (dateError) throw new Error("Invalid DATE ID");
+    if (!dateData) throw new Error("Date room not found");
     // Check if the user already has an entry for this date
     const { data: existingEntry, error: existingEntryError } = await supabase
       .from("availability")
@@ -112,17 +137,24 @@ async function joinDate() {
         });
       if (insertError) throw insertError;
     }
-    // If everything is successful, update the state
-    userStore.setName(userName.value); // Store the username
+    userStore.setName(userName.value.trim());
     currentDate.value = dateData;
     dateId.value = "";
   } catch (error) {
     console.error("Error joining date:", error);
-    console.log(
-      `Error joining date: ${
-        error.message || "Unknown error"
-      }. Please try again.`
-    );
+    showError.value = "join";
+    if (
+      error.message === "Invalid DATE ID" ||
+      error.message === "Date room not found"
+    ) {
+      errorMessage.value =
+        "We couldn't find that date room. Please check the ID and try again.";
+    } else {
+      errorMessage.value =
+        "Oops! We couldn't join the date room. Please try again later.";
+    }
+  } finally {
+    isLoading.value = false;
   }
 }
 
@@ -140,9 +172,15 @@ function updateUserData(data) {
 
 const hoveredUser = ref<string | null>(null);
 
-function updateHoveredUser(user: string | null) {
+const updateHoveredUser = (user: string | null) => {
   hoveredUser.value = user;
-}
+};
+
+const resetShowError = () => {
+  if (showError.value !== false) {
+    showError.value = false;
+  }
+};
 </script>
 
 <template>
@@ -254,12 +292,14 @@ function updateHoveredUser(user: string | null) {
         v-if="userStore.name"
         class="bg-coffee-mocha p-6 rounded shadow-md w-full max-w-[450px]"
       >
-        <h2 class="text-2xl font-bold text-coffee-foam mb-4">
-          Join a date room
-        </h2>
+        <div class="flex items-center gap-2 mb-4 text-coffee-foam">
+          <h2 class="text-2xl font-bold text-inherit">Join a date room</h2>
+          <CommonLoadingSpinner v-if="isLoading === 'join'" />
+        </div>
         <form @submit.prevent="joinDate" class="flex flex-col gap-4">
           <input
             v-model="dateId"
+            @input="resetShowError"
             class="text-coffee-mocha py-3 px-6 rounded border-2 border-coffee-foam focus:outline-none focus:border-coffee-bean"
             type="text"
             placeholder="Enter ID of the date room"
@@ -269,6 +309,13 @@ function updateHoveredUser(user: string | null) {
           >
             Join
           </button>
+          <div v-if="showError === 'join'" class="flex items-start gap-2">
+            <Icon
+              name="material-symbols:heart-broken-rounded"
+              class="text-2xl text-inherit"
+            />
+            <p class="text-inherit">{{ errorMessage }}</p>
+          </div>
         </form>
       </div>
       <span
@@ -281,10 +328,14 @@ function updateHoveredUser(user: string | null) {
         v-if="userStore.name"
         class="bg-coffee-latte p-6 rounded shadow-md w-full max-w-[450px]"
       >
-        <h2 class="text-2xl font-bold text-coffee-mocha mb-4">Create a date</h2>
+        <div class="flex items-center gap-2 mb-4 text-coffee-mocha">
+          <h2 class="text-2xl font-bold text-inherit">Create a date</h2>
+          <CommonLoadingSpinner v-if="isLoading === 'create'" />
+        </div>
         <form @submit.prevent="createDate" class="flex flex-col gap-4">
           <input
             v-model="dateName"
+            @input="resetShowError"
             class="text-coffee-mocha py-3 px-6 rounded border-2 border-coffee-foam focus:outline-none focus:border-coffee-bean"
             type="text"
             placeholder="Date name?"
@@ -294,6 +345,16 @@ function updateHoveredUser(user: string | null) {
           >
             Create
           </button>
+          <div
+            v-if="showError === 'create'"
+            class="flex items-start gap-2 text-coffee-mocha"
+          >
+            <Icon
+              name="material-symbols:heart-broken-rounded"
+              class="text-2xl text-inherit"
+            />
+            <p class="text-inherit">{{ errorMessage }}</p>
+          </div>
         </form>
       </div>
       <div class="flex flex-col items-center gap-2" v-else>

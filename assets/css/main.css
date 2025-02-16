@@ -136,6 +136,10 @@
   font-size: 1.75em;
 }
 
+.icon-size {
+  font-size: 1.25rem;
+}
+
 /***** Custom Webkit *****/
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
