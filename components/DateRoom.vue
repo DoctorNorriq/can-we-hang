@@ -15,6 +15,8 @@ const emit = defineEmits(["leaveDate", "updateUserData"]);
 
 const supabase = useSupabaseClient();
 const userStore = useUserStore();
+
+const currentCalendarMonth = ref(new Date());
 const selectedDates = ref<string[]>([]);
 const localSelectedDates = ref<string[]>([]);
 const allSelectedDates = ref<{ user_name: string; available_days: string[] }[]>(
@@ -180,6 +182,9 @@ async function saveDates() {
     if (error) throw error;
     selectedDates.value = [...localSelectedDates.value];
     await fetchAllSelectedDates();
+    if (localSelectedDates.value.length > 0) {
+      currentCalendarMonth.value = new Date(localSelectedDates.value[0]);
+    }
     showCalendar.value = false;
     console.log("Dates saved successfully!");
   } catch (error) {
@@ -276,17 +281,21 @@ function formatDate(dateString: string) {
   return `${day}-${month}-${year} (${dayOfWeek})`;
 }
 
-const addProposedDate = (date: string) => {
+function handleProposedDate(date: string) {
   const index = localSelectedDates.value.indexOf(date);
   if (index === -1) {
     localSelectedDates.value.push(date);
   } else {
     localSelectedDates.value.splice(index, 1);
   }
+
+  currentCalendarMonth.value = new Date(date);
+  console.log(currentCalendarMonth.value, "currentCalendarMonth");
+
   if (!showCalendar.value) {
     showCalendar.value = true;
   }
-};
+}
 
 const highestDateCount = computed(() => {
   return Math.max(...otherSelectedDates.value.map((date) => date.count));
@@ -470,7 +479,7 @@ watch(isDateLoaded, (newValue) => {
                         ? 'line-coffee-foam'
                         : 'line-coffee-mocha',
                     ]"
-                    @click="addProposedDate(date)"
+                    @click="handleProposedDate(date)"
                   >
                     <div class="flex items-center gap-1 text-inherit">
                       {{ formatDate(date) }}
@@ -588,7 +597,7 @@ watch(isDateLoaded, (newValue) => {
                     ? 'line-coffee-foam'
                     : 'line-coffee-mocha',
                 ]"
-                @click="addProposedDate(date.date)"
+                @click="handleProposedDate(date.date)"
               >
                 <span
                   class="flex items-center gap-1"
@@ -632,13 +641,7 @@ watch(isDateLoaded, (newValue) => {
         >
           Select dates
         </h3>
-        <button
-          @click="toggleCalendar"
-          class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
-          :class="buttonClasses"
-        >
-          {{ showCalendar ? "Hide Calendar" : "Show Calendar" }}
-        </button>
+
         <p
           v-if="userProposedDatesCount === 1 && !showCalendar"
           :class="
@@ -701,23 +704,33 @@ watch(isDateLoaded, (newValue) => {
           Select and save dates to propose them to your friends!
         </p>
         <Calendar
-          v-if="showCalendar"
+          v-show="showCalendar"
           v-model="localSelectedDates"
           :proposedDates="allProposedDates"
           :userHasSelectedDates="userHasSelectedDates"
+          :currentMonth="currentCalendarMonth"
         />
-        <button
-          v-if="showCalendar"
-          @click="saveDates"
-          class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
-          :class="
-            userHasSelectedDates
-              ? 'bg-coffee-mocha text-coffee-foam'
-              : 'bg-coffee-foam text-coffee-mocha'
-          "
-        >
-          Save Dates
-        </button>
+        <div class="flex flex-col gap-2">
+          <button
+            v-if="showCalendar"
+            @click="saveDates"
+            class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
+            :class="
+              userHasSelectedDates
+                ? 'bg-coffee-mocha text-coffee-foam'
+                : 'bg-coffee-foam text-coffee-mocha'
+            "
+          >
+            Save Dates
+          </button>
+          <button
+            @click="toggleCalendar"
+            class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
+            :class="buttonClasses"
+          >
+            {{ showCalendar ? "Hide Calendar" : "Show Calendar" }}
+          </button>
+        </div>
       </div>
       <div
         class="w-full max-w-[450px] flex flex-col gap-2"
