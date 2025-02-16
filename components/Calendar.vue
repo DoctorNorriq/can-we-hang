@@ -2,6 +2,7 @@
 const props = defineProps<{
   modelValue: string[];
   proposedDates?: string[];
+  userHasSelectedDates?: boolean;
 }>();
 
 const emit = defineEmits(["update:modelValue"]);
@@ -113,13 +114,15 @@ function isProposed(day: number) {
         v-for="day in days"
         :key="day"
         @click="toggleDate(day)"
+        class="transition-colors text-center p-2 cursor-pointer rounded font-bold sm:hover:bg-coffee-bean sm:hover:text-white"
         :class="[
-          'transition-colors text-center p-2 cursor-pointer rounded font-bold',
           isSelected(day)
             ? 'bg-coffee-bean text-white'
-            : isProposed(day)
-            ? 'bg-coffee-latte text-coffee-bean sm:hover:bg-coffee-bean sm:hover:text-white'
-            : 'bg-white text-coffee-bean sm:hover:bg-coffee-bean sm:hover:text-white',
+            : isProposed(day) && !userHasSelectedDates
+            ? 'bg-coffee-latte text-coffee-bean '
+            : isProposed(day) && userHasSelectedDates
+            ? 'bg-coffee-foam text-coffee-bean'
+            : 'bg-white text-coffee-bean',
         ]"
       >
         {{ day }}

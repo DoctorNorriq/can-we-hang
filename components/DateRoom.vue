@@ -62,16 +62,26 @@ const usersNotChosen = computed(() =>
 );
 
 const availableDates = computed(() => {
+  // If there are exactly 2 users and only one has chosen dates
+  if (userCount.value === 2 && usersChosen.value.length === 1) {
+    const chosenUser = allSelectedDates.value.find(
+      (user) => user.available_days.length > 0
+    );
+    return chosenUser ? chosenUser.available_days : [];
+  }
+
   // If not all users have chosen dates, return an empty array
   if (usersChosen.value.length !== userCount.value) {
     return [];
   }
+
   // If there are at least two users and all have chosen dates
   if (usersChosen.value.length >= 2) {
     return allSelectedDatesWithCount.value
       .filter((date) => date.count === userCount.value)
       .map((date) => date.date);
   }
+
   // If there's only one user who has chosen dates
   return allSelectedDatesWithCount.value.map((date) => date.date);
 });
@@ -304,9 +314,39 @@ const buttonClasses = computed(() => {
       : "bg-coffee-mocha text-coffee-foam";
   } else {
     return showCalendar.value
-      ? "bg-coffee-cappuccino text-white" // Red background when calendar is shown but no dates selected
-      : "bg-coffee-foam text-coffee-mocha"; // Blue background when calendar is hidden and no dates selected
+      ? "bg-coffee-cappuccino text-white"
+      : "bg-coffee-foam text-coffee-mocha";
   }
+});
+
+const groupedDates = computed(() => {
+  const groups: { [key: string]: string[] } = {};
+  availableDates.value.forEach((date) => {
+    const monthYear = new Date(date).toLocaleString("en-GB", {
+      month: "long",
+      year: "numeric",
+    });
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
+    }
+    groups[monthYear].push(date);
+  });
+  return groups;
+});
+
+const groupedOtherDates = computed(() => {
+  const groups: { [key: string]: typeof otherSelectedDates.value } = {};
+  otherSelectedDates.value.forEach((date) => {
+    const monthYear = new Date(date.date).toLocaleString("en-GB", {
+      month: "long",
+      year: "numeric",
+    });
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
+    }
+    groups[monthYear].push(date);
+  });
+  return groups;
 });
 
 onMounted(async () => {
@@ -378,7 +418,6 @@ watch(isDateLoaded, (newValue) => {
           </span>
         </div>
       </div>
-
       <div
         class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md overflow-y-auto custom-scrollbar max-h-[300px] sm:max-h-[350px]"
         :class="userHasSelectedDates ? 'bg-coffee-mocha' : 'bg-coffee-latte'"
@@ -389,91 +428,72 @@ watch(isDateLoaded, (newValue) => {
               userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
             "
           >
-            {{
-              usersChosen.length > 1
-                ? "Possible dates in common"
-                : "Possible dates"
-            }}
+            {{ usersChosen.length > 1 ? "Dates in common" : "Possible dates" }}
           </h3>
           <template v-if="usersChosen.length > 0">
-            <ul
-              v-if="availableDates.length > 0 && usersChosen.length > 1"
-              class="flex flex-col gap-1"
-            >
-              <li
-                v-for="date in availableDates"
-                :key="date"
-                title="Click to add to calendar"
-                class="flex items-center justify-between cursor-pointer sm:hover:bg-coffee-foam transition-colors"
-                :class="[
-                  userHasSelectedDates
-                    ? 'text-coffee-foam'
-                    : 'text-coffee-mocha',
-                  { 'font-bold': date.count >= highestDateCount },
-                  { 'bg-coffee-foam': hoveredUserDates.includes(date) },
-                ]"
-                @click="addProposedDate(date)"
-              >
-                <span>{{ formatDate(date) }}</span>
-                <Icon
-                  v-if="
-                    selectedDates.includes(date) ||
-                    localSelectedDates.includes(date)
-                  "
-                  name="material-symbols:star-rounded"
+            <div v-if="Object.keys(groupedDates).length > 0">
+              <div v-for="(dates, monthYear) in groupedDates" :key="monthYear">
+                <h4
                   :class="
                     userHasSelectedDates
                       ? 'text-coffee-foam'
                       : 'text-coffee-mocha'
                   "
-                  title="You have selected this date"
-                />
-              </li>
-            </ul>
-            <ul v-if="usersChosen.length === 1" class="flex flex-col gap-1">
-              <li
-                v-for="date in otherSelectedDates"
-                :key="date.date"
-                title="Click to add to calendar"
-                class="flex items-center justify-between cursor-pointer sm:hover:bg-coffee-foam transition-colors"
-                :class="[
-                  userHasSelectedDates
-                    ? 'text-coffee-foam'
-                    : 'text-coffee-mocha',
-                  { 'font-bold': date.count >= highestDateCount },
-                  { 'bg-coffee-foam': hoveredUserDates.includes(date.date) },
-                ]"
-                @click="addProposedDate(date.date)"
-              >
-                <span
-                  class="flex items-center gap-1"
-                  :class="[
-                    userHasSelectedDates
-                      ? 'text-coffee-foam'
-                      : 'text-coffee-mocha',
-                    {
-                      'font-bold': date.count >= highestDateCount,
-                    },
-                  ]"
+                  class="font-bold mt-4 mb-2"
                 >
-                  {{ formatDate(date.date) }}
-                  <Icon
-                    v-if="
-                      selectedDates.includes(date.date) ||
-                      localSelectedDates.includes(date.date)
-                    "
-                    name="material-symbols:star-rounded"
-                    :class="
+                  {{ monthYear }}
+                </h4>
+                <ul class="flex flex-col gap-1">
+                  <li
+                    v-for="date in dates"
+                    :key="date"
+                    title="Click to add to calendar"
+                    class="flex items-center justify-between cursor-pointer transition-all sm:hover:opacity-75 relative"
+                    :class="[
                       userHasSelectedDates
                         ? 'text-coffee-foam'
-                        : 'text-coffee-mocha'
-                    "
-                    title="You have selected this date"
-                  />
-                </span>
-                ({{ date.count }} of {{ userCount }})
-              </li>
-            </ul>
+                        : 'text-coffee-mocha',
+                      {
+                        'font-bold':
+                          allSelectedDatesWithCount.find((d) => d.date === date)
+                            ?.count >= highestDateCount,
+                      },
+                      { 'bg-blue-500': hoveredUserDates.includes(date) },
+                      selectedDates.includes(date) &&
+                      !localSelectedDates.includes(date)
+                        ? 'opacity-75 full-width-line-through'
+                        : '',
+                      userHasSelectedDates
+                        ? 'line-coffee-foam'
+                        : 'line-coffee-mocha',
+                    ]"
+                    @click="addProposedDate(date)"
+                  >
+                    <div class="flex items-center gap-1 text-inherit">
+                      {{ formatDate(date) }}
+                      <Icon
+                        v-if="
+                          selectedDates.includes(date) ||
+                          localSelectedDates.includes(date)
+                        "
+                        name="material-symbols:star-rounded"
+                        :class="
+                          userHasSelectedDates
+                            ? 'text-coffee-foam'
+                            : 'text-coffee-mocha'
+                        "
+                        title="You have selected this date"
+                      />
+                    </div>
+                    ({{
+                      allSelectedDatesWithCount.find((d) => d.date === date)
+                        ?.count
+                    }}
+                    of {{ userCount }})
+                  </li>
+                </ul>
+              </div>
+            </div>
             <p
               v-if="usersChosen.length === 1"
               class="mt-4"
@@ -534,46 +554,65 @@ watch(isDateLoaded, (newValue) => {
           >
             Other proposed dates
           </h3>
-          <ul class="flex flex-col gap-1">
-            <li
-              v-for="date in otherSelectedDates"
-              :key="date.date"
-              title="Click to add to calendar"
-              class="flex items-center justify-between cursor-pointer sm:hover:bg-coffee-foam transition-colors"
-              :class="[
-                userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha',
-                { 'font-bold': date.count >= highestDateCount },
-                { 'bg-coffee-foam': hoveredUserDates.includes(date.date) },
-              ]"
-              @click="addProposedDate(date.date)"
+          <div v-for="(dates, monthYear) in groupedOtherDates" :key="monthYear">
+            <h4
+              :class="
+                userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
+              "
+              class="font-bold mt-4 mb-2"
             >
-              <span
-                class="flex items-center gap-1"
+              {{ monthYear }}
+            </h4>
+            <ul class="flex flex-col gap-1">
+              <li
+                v-for="date in dates"
+                :key="date.date"
+                title="Click to add to calendar"
+                class="flex items-center justify-between cursor-pointer transition-all sm:hover:opacity-75 relative"
                 :class="[
                   userHasSelectedDates
                     ? 'text-coffee-foam'
                     : 'text-coffee-mocha',
                   { 'font-bold': date.count >= highestDateCount },
+                  { 'bg-blue-500': hoveredUserDates.includes(date.date) },
+                  selectedDates.includes(date.date) &&
+                  !localSelectedDates.includes(date.date)
+                    ? 'opacity-75 full-width-line-through'
+                    : '',
+                  userHasSelectedDates
+                    ? 'line-coffee-foam'
+                    : 'line-coffee-mocha',
                 ]"
+                @click="addProposedDate(date.date)"
               >
-                {{ formatDate(date.date) }}
-                <Icon
-                  v-if="
-                    selectedDates.includes(date.date) ||
-                    localSelectedDates.includes(date.date)
-                  "
-                  name="material-symbols:star-rounded"
-                  :class="
+                <span
+                  class="flex items-center gap-1"
+                  :class="[
                     userHasSelectedDates
                       ? 'text-coffee-foam'
-                      : 'text-coffee-mocha'
-                  "
-                  title="You have selected this date"
-                />
-              </span>
-              ({{ date.count }} of {{ userCount }})
-            </li>
-          </ul>
+                      : 'text-coffee-mocha',
+                    { 'font-bold': date.count >= highestDateCount },
+                  ]"
+                >
+                  {{ formatDate(date.date) }}
+                  <Icon
+                    v-if="
+                      selectedDates.includes(date.date) ||
+                      localSelectedDates.includes(date.date)
+                    "
+                    name="material-symbols:star-rounded"
+                    :class="
+                      userHasSelectedDates
+                        ? 'text-coffee-foam'
+                        : 'text-coffee-mocha'
+                    "
+                    title="You have selected this date"
+                  />
+                </span>
+                ({{ date.count }} of {{ userCount }})
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
       <div
@@ -588,7 +627,6 @@ watch(isDateLoaded, (newValue) => {
         >
           Select dates
         </h3>
-
         <button
           @click="toggleCalendar"
           class="py-3 px-6 font-bold rounded transition-colors sm:hover:bg-coffee-bean sm:hover:text-coffee-foam w-full"
@@ -623,25 +661,45 @@ watch(isDateLoaded, (newValue) => {
           calendar to get started!
         </p>
         <p
+          v-else-if="selectedDates.length !== localSelectedDates.length"
+          :class="
+            userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
+          "
+        >
+          <span
+            v-if="
+              selectedDates.length !== localSelectedDates.length &&
+              userHasSelectedDates
+            "
+            class="text-inherit line-through decoration-2"
+          >
+            {{ selectedDates.length }}</span
+          >
+          {{
+            `${localSelectedDates.length} ${
+              localSelectedDates.length === 1 ? "date" : "dates"
+            } selected. Remember to save ${
+              localSelectedDates.length === 1
+                ? "it"
+                : localSelectedDates.length === 0
+                ? ""
+                : "them"
+            } :)`
+          }}
+        </p>
+        <p
           v-else
           :class="
             userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
           "
         >
-          {{
-            localSelectedDates.length > 0
-              ? `${localSelectedDates.length} ${
-                  localSelectedDates.length === 1 ? "date" : "dates"
-                } selected. Remember to save ${
-                  localSelectedDates.length === 1 ? "it" : "them"
-                } :)`
-              : "Select and save dates to propose them to your friends!"
-          }}
+          Select and save dates to propose them to your friends!
         </p>
         <Calendar
           v-if="showCalendar"
           v-model="localSelectedDates"
           :proposedDates="allProposedDates"
+          :userHasSelectedDates="userHasSelectedDates"
         />
         <button
           v-if="showCalendar"
@@ -665,7 +723,7 @@ watch(isDateLoaded, (newValue) => {
           class="w-full bg-coffee-latte py-3 px-6 font-bold rounded transition-colors"
           :class="
             !leaveDateConfirm
-              ? 'bg-coffee-latte text-coffee-mocha sm:hover:bg-coffee-mocha sm:hover:text-coffee-foam'
+              ? 'bg-coffee-latte text-coffee-mocha'
               : 'bg-coffee-mocha text-coffee-latte'
           "
         >
@@ -697,3 +755,37 @@ watch(isDateLoaded, (newValue) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.full-width-line-through::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid;
+  transform: translateY(-50%);
+}
+
+.line-coffee-foam::before {
+  border-color: theme("colors.coffee.foam");
+}
+
+.line-coffee-mocha::before {
+  border-color: theme("colors.coffee.mocha");
+}
+
+.wide-line-through {
+  position: relative;
+}
+.wide-line-through::after {
+  content: "";
+  position: absolute;
+  left: -0.5em; /* Extend 0.5em to the left */
+  right: -0.5em; /* Extend 0.5em to the right */
+  top: 50%;
+  border-top-width: 2px; /* Use Tailwind's decoration-2 thickness */
+  border-top-style: solid;
+  transform: translateY(-50%);
+}
+</style>
