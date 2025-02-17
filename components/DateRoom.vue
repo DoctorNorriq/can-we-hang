@@ -610,7 +610,10 @@ watch(isDateLoaded, (newValue) => {
                     ? 'text-coffee-foam'
                     : 'text-coffee-mocha',
                   { 'font-bold': date.count >= highestDateCount },
-                  { 'bg-blue-500': hoveredUserDates.includes(date.date) },
+                  {
+                    'bg-coffee-cappuccino !text-coffee-foam':
+                      hoveredUserDates.includes(date.date),
+                  },
                   selectedDates.includes(date.date) &&
                   !localSelectedDates.includes(date.date)
                     ? 'opacity-75 full-width-line-through'
@@ -655,7 +658,7 @@ watch(isDateLoaded, (newValue) => {
         class="flex flex-col gap-4 w-full max-w-[450px] p-6 rounded shadow-md"
         :class="userHasSelectedDates ? 'bg-coffee-latte' : 'bg-coffee-mocha'"
       >
-        <div class="flex justify-center items-center gap-2">
+        <div class="flex justify-start items-center gap-2">
           <h3
             class="text-2xl"
             :class="
