@@ -138,8 +138,16 @@ async function fetchAllSelectedDates() {
     }
     emit("updateUserData", {
       userCount: userCount.value,
-      usersChosen: usersChosen.value,
-      usersNotChosen: usersNotChosen.value,
+      usersChosen: usersChosen.value.map((user) => ({
+        name: user,
+        dateCount:
+          allSelectedDates.value.find((u) => u.user_name === user)
+            ?.available_days.length || 0,
+      })),
+      usersNotChosen: usersNotChosen.value.map((user) => ({
+        name: user,
+        dateCount: 0,
+      })),
     });
   } catch (error) {
     console.error("Error fetching dates:", error);
@@ -371,6 +379,10 @@ function toggleAllDates() {
     localSelectedDates.value = [...previouslySelectedDates.value];
     isAllRemoved.value = false;
   }
+
+  if (!showCalendar.value) {
+    showCalendar.value = true;
+  }
 }
 
 function handleDateToggled(date: string) {
@@ -378,6 +390,25 @@ function handleDateToggled(date: string) {
     previouslySelectedDates.value = [];
     isAllRemoved.value = false;
   }
+}
+
+function generateShareableLink() {
+  if (!props.date || !props.date.code) return;
+
+  const baseUrl = window.location.origin; // Gets the base URL of your website
+  const shareableLink = `${baseUrl}?code=${props.date.code}`;
+
+  // Copy the link to clipboard
+  navigator.clipboard
+    .writeText(shareableLink)
+    .then(() => {
+      console.log("Shareable link copied to clipboard:", shareableLink);
+      // You might want to show a toast or some feedback to the user here
+    })
+    .catch((err) => {
+      console.error("Failed to copy shareable link: ", err);
+      // Handle the error, maybe show an error message to the user
+    });
 }
 
 onMounted(async () => {
@@ -433,20 +464,25 @@ watch(isDateLoaded, (newValue) => {
     >
       <div class="flex flex-col items-center w-full">
         <h1
-          class="text-[clamp(2rem,5vw,4rem)] font-bold text-coffee-mocha text-center break-words w-full font-handwritten"
+          class="text-[clamp(2rem,5vw,4rem)] font-bold text-accent-teal text-center break-words font-handwritten w-fit"
         >
-          " {{ date!.name }} "
+          {{ date!.name }}
         </h1>
+
         <div
-          class="flex items-center justify-center w-full max-w-[450px] -mt-2"
+          class="flex items-center gap-1 justify-center w-fit max-w-[450px] -mt-2 group cursor-pointer"
+          title="Click to copy link to date room"
         >
-          <span
-            class="text-blue-600 font-bold cursor-pointer text-[clamp(1.25rem,3vw,2rem)]"
-            @click="copyDateCode"
-            title="Click to copy date code"
+          <h2
+            class="text-accent-teal font-bold opacity-40 sm:group-hover:opacity-100 transition-opacity"
           >
             #{{ date!.code }}
-          </span>
+          </h2>
+          <Icon
+            name="material-symbols:ios-share-rounded"
+            class="opacity-40 sm:group-hover:opacity-100 text-accent-teal transition-opacity text-2xl"
+            @click="generateShareableLink"
+          />
         </div>
       </div>
       <div
@@ -454,23 +490,27 @@ watch(isDateLoaded, (newValue) => {
         :class="userHasSelectedDates ? 'bg-coffee-mocha' : 'bg-coffee-latte'"
       >
         <div>
-          <h3
+          <h2
             :class="
               userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
             "
           >
             {{ usersChosen.length > 1 ? "Dates in common" : "Possible dates" }}
-          </h3>
+          </h2>
           <template v-if="usersChosen.length > 0">
             <div v-if="Object.keys(groupedDates).length > 0">
-              <div v-for="(dates, monthYear) in groupedDates" :key="monthYear">
+              <div
+                v-for="(dates, monthYear) in groupedDates"
+                :key="monthYear"
+                class="mb-2"
+              >
                 <h5
                   :class="
                     userHasSelectedDates
                       ? 'text-coffee-foam opacity-50'
                       : 'text-coffee-mocha opacity-50'
                   "
-                  class="mt-4 mb-1"
+                  class="my-1"
                 >
                   {{ monthYear }}
                 </h5>
@@ -504,6 +544,11 @@ watch(isDateLoaded, (newValue) => {
                     @click="handleProposedDate(date)"
                   >
                     <div class="flex items-center gap-1 text-inherit">
+                      <Icon
+                        v-if="usersChosen.length > 1"
+                        name="material-symbols:favorite-rounded"
+                        class="text-accent-teal"
+                      />
                       {{ formatDate(date) }}
                       <Icon
                         v-if="
@@ -511,11 +556,7 @@ watch(isDateLoaded, (newValue) => {
                           localSelectedDates.includes(date)
                         "
                         name="material-symbols:star-rounded"
-                        :class="
-                          userHasSelectedDates
-                            ? 'text-coffee-foam'
-                            : 'text-coffee-mocha'
-                        "
+                        class="text-accent-gold"
                         title="You have selected this date"
                       />
                     </div>
@@ -581,7 +622,13 @@ watch(isDateLoaded, (newValue) => {
           </p>
         </div>
         <div v-if="otherSelectedDates.length > 0 && usersChosen.length > 1">
+          <CommonBreakline
+            :class="userHasSelectedDates ? 'bg-coffee-foam' : 'bg-coffee-mocha'"
+          />
+        </div>
+        <div v-if="otherSelectedDates.length > 0 && usersChosen.length > 1">
           <h3
+            class=""
             :class="
               userHasSelectedDates ? 'text-coffee-foam' : 'text-coffee-mocha'
             "
@@ -595,7 +642,7 @@ watch(isDateLoaded, (newValue) => {
                   ? 'text-coffee-foam opacity-50'
                   : 'text-coffee-mocha opacity-50'
               "
-              class="mt-4 mb-1"
+              class="my-1"
             >
               {{ monthYear }}
             </h5>
@@ -633,6 +680,14 @@ watch(isDateLoaded, (newValue) => {
                     { 'font-bold': date.count >= highestDateCount },
                   ]"
                 >
+                  <Icon
+                    name="material-symbols:help-rounded"
+                    :class="
+                      userHasSelectedDates
+                        ? 'text-coffee-foam'
+                        : 'text-coffee-mocha'
+                    "
+                  />
                   {{ formatDate(date.date) }}
                   <Icon
                     v-if="
@@ -640,11 +695,7 @@ watch(isDateLoaded, (newValue) => {
                       localSelectedDates.includes(date.date)
                     "
                     name="material-symbols:star-rounded"
-                    :class="
-                      userHasSelectedDates
-                        ? 'text-coffee-foam'
-                        : 'text-coffee-mocha'
-                    "
+                    class="text-accent-gold"
                     title="You have selected this date"
                   />
                 </span>
@@ -685,7 +736,12 @@ watch(isDateLoaded, (newValue) => {
                     ? 'material-symbols:settings-backup-restore'
                     : 'material-symbols:delete-sharp'
                 "
-                class="icon-size text-inherit"
+                class="icon-size"
+                :class="
+                  !userHasSelectedDates
+                    ? 'text-coffee-foam'
+                    : 'text-coffee-mocha'
+                "
               />
             </button>
           </div>

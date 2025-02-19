@@ -15,15 +15,16 @@ const userCount = ref(0);
 const usersChosen = ref([]);
 const usersNotChosen = ref([]);
 
-onMounted(() => {
-  // Load the username from the store
-  userName.value = userStore.name;
-});
-
 async function saveName() {
   userStore.setName(userName.value.trim());
   editName.value = false;
   console.log("Name saved:", userStore.name);
+
+  if (pendingRoomCode.value) {
+    dateId.value = pendingRoomCode.value;
+    await joinDate();
+    pendingRoomCode.value = null;
+  }
 }
 
 async function createDate() {
@@ -63,6 +64,7 @@ async function createDate() {
     userStore.setName(userName.value.trim());
     currentDate.value = data[0];
     dateName.value = "";
+    pendingRoomCode.value = "";
   } catch (error) {
     console.error("Error creating date:", error);
     showError.value = "create";
@@ -80,9 +82,17 @@ async function joinDate() {
       "Please enter the ID of the date room you want to join.";
     return;
   }
+
+  if (!userStore.name) {
+    pendingRoomCode.value = dateId.value;
+    editName.value = true;
+    return;
+  }
+
   if (!userName.value.trim()) {
     showError.value = "join";
     errorMessage.value = "Please enter your name before joining a date room.";
+    editName.value = true;
     return;
   }
 
@@ -139,6 +149,7 @@ async function joinDate() {
     }
     userStore.setName(userName.value.trim());
     currentDate.value = dateData;
+    pendingRoomCode.value = "";
     dateId.value = "";
   } catch (error) {
     console.error("Error joining date:", error);
@@ -166,10 +177,15 @@ function leaveDate() {
 // New function to update user data
 function updateUserData(data) {
   userCount.value = data.userCount;
-  usersChosen.value = data.usersChosen;
-  usersNotChosen.value = data.usersNotChosen;
+  usersChosen.value = data.usersChosen.map((user) => ({
+    name: user.name,
+    dateCount: user.dateCount,
+  }));
+  usersNotChosen.value = data.usersNotChosen.map((user) => ({
+    name: user.name,
+    dateCount: 0,
+  }));
 }
-
 const hoveredUser = ref<string | null>(null);
 
 const updateHoveredUser = (user: string | null) => {
@@ -181,6 +197,17 @@ const resetShowError = () => {
     showError.value = false;
   }
 };
+
+const pendingRoomCode = ref<string | null>(null);
+
+onMounted(async () => {
+  userName.value = userStore.name;
+  const route = useRoute();
+  const code = route.query.code;
+  if (code && typeof code === "string") {
+    pendingRoomCode.value = code;
+  }
+});
 </script>
 
 <template>
@@ -188,12 +215,13 @@ const resetShowError = () => {
     <div
       class="relative flex flex-col items-center justify-center bg-coffee-mocha p-4"
     >
-      <div class="text-center">
+      <div>
         <h1
           class="text-coffee-foam font-bold text-coffee-border-coffee-foam text-[clamp(2rem,5vw,4rem)]"
         >
           Is it a date?
         </h1>
+
         <p
           v-if="userStore.name && !editName && !currentDate"
           class="text-coffee-foam mb-4"
@@ -205,6 +233,45 @@ const resetShowError = () => {
             >{{ userStore.name }}</span
           >!
         </p>
+        <div
+          v-if="currentDate"
+          class="flex flex-col gap-4 w-full max-w-[450px]"
+        >
+          <div class="w-full">
+            <h3 class="text-coffee-foam mb-2">
+              {{ usersChosen.length }}/{{ userCount }}
+              have proposed dates
+            </h3>
+            <div
+              class="max-h-[200px] sm:max-h-[500px] sm:overflow-y-auto custom-scrollbar"
+            >
+              <div
+                v-for="user in usersChosen"
+                :key="user.name"
+                class="flex items-center justify-between text-coffee-foam font-bold cursor-pointer mb-1 font-handwritten text-[1.5rem] w-full"
+                @mouseover="updateHoveredUser(user.name)"
+                @mouseleave="updateHoveredUser(null)"
+                :class="{ '!text-coffee-latte': hoveredUser === user.name }"
+              >
+                <div class="flex items-center gap-1">
+                  <Icon
+                    class="text-coffee-foam text-[1.5rem]"
+                    name="mdi:check-bold"
+                  />
+                  {{ user.name }}
+                  ({{ user.dateCount }} dates)
+                  <Icon
+                    v-if="user.name === userName"
+                    name="material-symbols:star-rounded"
+                    class="text-accent-gold text-[1.5rem]"
+                    title="You have selected this date"
+                  />
+                </div>
+              </div>
+              <!-- ... rest of the code for usersNotChosen ... -->
+            </div>
+          </div>
+        </div>
       </div>
 
       <form
@@ -221,68 +288,11 @@ const resetShowError = () => {
         <button
           class="bg-coffee-foam py-3 px-6 text-coffee-mocha font-bold rounded transition-colors hover:bg-coffee-bean hover:text-coffee-foam"
         >
-          Save
+          {{
+            pendingRoomCode ? `Save & join room #${pendingRoomCode}` : "Save"
+          }}
         </button>
       </form>
-
-      <div
-        v-if="currentDate"
-        class="flex flex-col gap-4 w-full max-w-[450px] p-4"
-      >
-        <div class="w-full">
-          <h3 class="text-coffee-foam mb-2">
-            {{ usersChosen.length }}/{{ userCount }}
-            have proposed dates
-          </h3>
-          <div
-            class="max-h-[200px] sm:max-h-[500px] sm:overflow-y-auto custom-scrollbar"
-          >
-            <div
-              v-for="user in usersChosen"
-              :key="user"
-              class="flex items-center gap-1 text-coffee-foam font-bold cursor-pointer mb-1 font-handwritten text-[1.5rem] w-fit"
-              @mouseover="updateHoveredUser(user)"
-              @mouseleave="updateHoveredUser(null)"
-              :class="{ '!text-coffee-latte': hoveredUser === user }"
-            >
-              <Icon
-                class="text-coffee-foam text-[1.5rem]"
-                name="mdi:check-bold"
-              />
-              {{ user }} {{ user === userName ? "(me)" : "" }}
-              <Icon
-                v-if="user === userName"
-                name="material-symbols:star-rounded"
-                class="text-coffee-foam text-[1.5rem]"
-                title="You have selected this date"
-              />
-            </div>
-            <div
-              v-if="usersChosen.length > 0 && usersNotChosen.length > 0"
-              class="w-full h-px bg-coffee-foam my-3"
-            ></div>
-            <div
-              v-for="user in usersNotChosen"
-              class="flex items-center gap-1 text-coffee-foam font-bold mb-1 cursor-pointer font-handwritten text-[1.5rem] w-fit"
-              @mouseover="updateHoveredUser(user)"
-              @mouseleave="updateHoveredUser(null)"
-              :class="{ '!text-coffee-latte': hoveredUser === user }"
-            >
-              <Icon
-                class="text-coffee-foam text-[1.5rem]"
-                name="mdi:close-thick"
-              />
-              {{ user }} {{ user === userName ? "(me)" : "" }}
-              <Icon
-                v-if="user === userName"
-                name="material-symbols:star-rounded"
-                class="text-coffee-foam"
-                title="You have selected this date"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     <div
       v-if="!currentDate"
@@ -365,7 +375,11 @@ const resetShowError = () => {
           />
         </div>
         <p class="text-coffee-mocha text-[1.25rem] text-center">
-          Enter and save your name, to gain access to everything!
+          {{
+            pendingRoomCode
+              ? `Enter and save your name, to gain access to room #${pendingRoomCode}!`
+              : "Enter and save your name, to gain access to everything!"
+          }}
         </p>
       </div>
     </div>

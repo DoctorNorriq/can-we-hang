@@ -13,6 +13,15 @@ export default <Partial<Config>>{
           bean: "#4E342E",
           foam: "#EFEBE9",
         },
+        accent: {
+          teal: "#4DB6AC",
+          orange: "#FFB74D",
+          burgundy: "#AD1457",
+          green: "#2E7D32",
+          gold: "#FFC107",
+          blue: "#546E7A",
+          coral: "#FF8A65",
+        },
       },
       fontFamily: {
         sans: ["Lato", "sans-serif"],
