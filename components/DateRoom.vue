@@ -510,7 +510,7 @@ watch(isDateLoaded, (newValue) => {
                       ? 'text-coffee-foam opacity-50'
                       : 'text-coffee-mocha opacity-50'
                   "
-                  class="my-1"
+                  class="mb-1 mt-3"
                 >
                   {{ monthYear }}
                 </h5>
@@ -530,7 +530,7 @@ watch(isDateLoaded, (newValue) => {
                             ?.count >= highestDateCount,
                       },
                       {
-                        'bg-coffee-cappuccino !text-coffee-foam':
+                        'bg-accent-teal !text-coffee-foam':
                           hoveredUserDates.includes(date),
                       },
                       selectedDates.includes(date) &&
@@ -547,7 +547,6 @@ watch(isDateLoaded, (newValue) => {
                       <Icon
                         v-if="usersChosen.length > 1"
                         name="material-symbols:favorite-rounded"
-                        class="text-accent-teal"
                       />
                       {{ formatDate(date) }}
                       <Icon
@@ -642,7 +641,7 @@ watch(isDateLoaded, (newValue) => {
                   ? 'text-coffee-foam opacity-50'
                   : 'text-coffee-mocha opacity-50'
               "
-              class="my-1"
+              class="mb-1 mt-3"
             >
               {{ monthYear }}
             </h5>
@@ -658,7 +657,7 @@ watch(isDateLoaded, (newValue) => {
                     : 'text-coffee-mocha',
                   { 'font-bold': date.count >= highestDateCount },
                   {
-                    'bg-coffee-cappuccino !text-coffee-foam':
+                    'bg-accent-teal !text-coffee-foam':
                       hoveredUserDates.includes(date.date),
                   },
                   selectedDates.includes(date.date) &&
@@ -672,7 +671,7 @@ watch(isDateLoaded, (newValue) => {
                 @click="handleProposedDate(date.date)"
               >
                 <span
-                  class="flex items-center gap-1"
+                  class="flex items-center gap-1 text-inherit"
                   :class="[
                     userHasSelectedDates
                       ? 'text-coffee-foam'
@@ -680,14 +679,6 @@ watch(isDateLoaded, (newValue) => {
                     { 'font-bold': date.count >= highestDateCount },
                   ]"
                 >
-                  <Icon
-                    name="material-symbols:help-rounded"
-                    :class="
-                      userHasSelectedDates
-                        ? 'text-coffee-foam'
-                        : 'text-coffee-mocha'
-                    "
-                  />
                   {{ formatDate(date.date) }}
                   <Icon
                     v-if="
@@ -762,7 +753,8 @@ watch(isDateLoaded, (newValue) => {
             userHasSelectedDates ? 'text-coffee-mocha' : 'text-coffee-foam'
           "
         >
-          You have proposed some dates - good job, {{ userStore.name }}!
+          You have proposed {{ userProposedDatesCount }} dates. Good job,
+          {{ userStore.name }} :)
         </p>
         <p
           v-else-if="!showCalendar"

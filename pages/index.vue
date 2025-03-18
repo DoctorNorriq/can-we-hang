@@ -221,7 +221,35 @@ onMounted(async () => {
         >
           Is it a date?
         </h1>
-
+        <div
+          v-if="currentDate"
+          class="flex gap-1 items-center text-accent-gold mb-4 overflow-x-auto"
+        >
+          <Icon
+            v-for="user in usersChosen"
+            name="mdi:account-check"
+            class="text-2xl cursor-pointer"
+            :class="[
+              userName === user.name && 'text-accent-gold',
+              hoveredUser === user.name && 'text-accent-teal',
+            ]"
+            @mouseover="updateHoveredUser(user.name)"
+            @mouseleave="updateHoveredUser(null)"
+            :title="user.name"
+          />
+          <Icon
+            v-for="user in usersNotChosen"
+            name="mdi:account"
+            class="text-2xl cursor-pointer"
+            :class="[
+              userName === user.name && 'text-accent-gold',
+              hoveredUser === user.name && 'text-accent-teal',
+            ]"
+            @mouseover="updateHoveredUser(user.name)"
+            @mouseleave="updateHoveredUser(null)"
+            :title="user.name"
+          />
+        </div>
         <p
           v-if="userStore.name && !editName && !currentDate"
           class="text-coffee-foam mb-4"
@@ -238,24 +266,23 @@ onMounted(async () => {
           class="flex flex-col gap-4 w-full max-w-[450px]"
         >
           <div class="w-full">
-            <h3 class="text-coffee-foam mb-2">
-              {{ usersChosen.length }}/{{ userCount }}
-              have proposed dates
-            </h3>
             <div
               class="max-h-[200px] sm:max-h-[500px] sm:overflow-y-auto custom-scrollbar"
             >
               <div
                 v-for="user in usersChosen"
                 :key="user.name"
-                class="flex items-center justify-between text-coffee-foam font-bold cursor-pointer mb-1 font-handwritten text-[1.5rem] w-full"
+                class="flex items-center justify-between text-coffee-foam font-bold cursor-pointer mb-1 font-handwritten text-[1.5rem] w-fit transition-colors"
                 @mouseover="updateHoveredUser(user.name)"
                 @mouseleave="updateHoveredUser(null)"
-                :class="{ '!text-coffee-latte': hoveredUser === user.name }"
+                :class="hoveredUser === user.name ? 'text-accent-teal' : ''"
               >
-                <div class="flex items-center gap-1">
+                <div
+                  class="flex items-center gap-1"
+                  :class="hoveredUser === user.name ? 'text-accent-teal' : ''"
+                >
                   <Icon
-                    class="text-coffee-foam text-[1.5rem]"
+                    class="text-inherit text-[1.5rem]"
                     name="mdi:check-bold"
                   />
                   {{ user.name }}
@@ -264,11 +291,42 @@ onMounted(async () => {
                     v-if="user.name === userName"
                     name="material-symbols:star-rounded"
                     class="text-accent-gold text-[1.5rem]"
+                    :class="hoveredUser === user.name && 'text-accent-teal'"
                     title="You have selected this date"
                   />
                 </div>
               </div>
-              <!-- ... rest of the code for usersNotChosen ... -->
+              <CommonBreakline
+                v-if="usersNotChosen.length > 0"
+                class="bg-coffee-foam"
+              />
+              <div
+                v-for="user in usersNotChosen"
+                :key="user.name"
+                class="flex items-center justify-between text-coffee-foam font-bold cursor-pointer mb-1 font-handwritten text-[1.5rem] w-fit transition-colors"
+                @mouseover="updateHoveredUser(user.name)"
+                @mouseleave="updateHoveredUser(null)"
+                :class="hoveredUser === user.name ? 'text-accent-teal' : ''"
+              >
+                <div
+                  class="flex items-center gap-1"
+                  :class="hoveredUser === user.name ? 'text-accent-teal' : ''"
+                >
+                  <Icon
+                    class="text-inherit text-[1.5rem]"
+                    name="mdi:close-thick"
+                  />
+                  {{ user.name }}
+                  ({{ user.dateCount }} dates)
+                  <Icon
+                    v-if="user.name === userName"
+                    name="material-symbols:star-rounded"
+                    class="text-accent-gold text-[1.5rem]"
+                    :class="hoveredUser === user.name && 'text-accent-teal'"
+                    title="You have selected this date"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
